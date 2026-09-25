@@ -562,33 +562,35 @@
         </div>
     </div>
 
-    <!-- MODAL 2: WooCommerce API Settings -->
+    <!-- MODAL 2: Secure WooCommerce API Proxy -->
     <div id="apiModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-metallic-800 border border-gold-500/40 w-full max-w-md rounded-xl p-6 shadow-2xl">
             <div class="flex justify-between items-center pb-3 border-b border-slate-700">
-                <h3 class="font-heading font-bold text-gold-500 text-md">Tetapan WooCommerce REST API</h3>
+                <div>
+                    <h3 class="font-heading font-bold text-gold-500 text-md">Tetapan Sambungan WooCommerce</h3>
+                    <p class="text-[10px] text-slate-500 mt-1">Consumer Secret disimpan di Google Apps Script</p>
+                </div>
                 <button onclick="closeApiModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            
-            <p class="text-xs text-slate-400 my-3">
-                Masukkan Consumer Key & Consumer Secret untuk tarik stok/produk secara langsung dari <strong>empiredaie.com.my</strong>.
-            </p>
+
+            <div class="my-4 p-3 rounded-lg bg-emerald-950/30 border border-emerald-700/40 text-xs text-emerald-300">
+                <i class="fa-solid fa-shield-halved mr-1"></i>
+                POS ini tidak lagi menyimpan Consumer Key/Secret WooCommerce dalam browser.
+            </div>
 
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs text-slate-300 mb-1">Store URL:</label>
-                    <input type="text" id="apiStoreUrl" value="https://empiredaie.com.my" placeholder="https://empiredaie.com.my" 
+                    <label class="block text-xs text-slate-300 mb-1">Google Apps Script Web App URL:</label>
+                    <input type="text" id="apiProxyUrl" placeholder="https://script.google.com/macros/s/.../exec"
                         class="w-full px-3 py-2 bg-metallic-900 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none focus:border-gold-500">
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-300 mb-1">Consumer Key (ck_...):</label>
-                    <input type="text" id="apiConsumerKey" placeholder="ck_xxxxxxxxxxxxxxxxxxxxxxxx" 
+                    <label class="block text-xs text-slate-300 mb-1">POS API Token:</label>
+                    <input type="password" id="apiProxyToken" placeholder="Token daripada Script Properties"
                         class="w-full px-3 py-2 bg-metallic-900 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none focus:border-gold-500">
                 </div>
-                <div>
-                    <label class="block text-xs text-slate-300 mb-1">Consumer Secret (cs_...):</label>
-                    <input type="password" id="apiConsumerSecret" placeholder="cs_xxxxxxxxxxxxxxxxxxxxxxxx" 
-                        class="w-full px-3 py-2 bg-metallic-900 border border-slate-700 rounded text-xs text-slate-200 focus:outline-none focus:border-gold-500">
+                <div class="text-[10px] leading-relaxed text-slate-500">
+                    Web App URL dan token sahaja disimpan dalam browser. WooCommerce Consumer Secret kekal di Google Apps Script.
                 </div>
             </div>
 
@@ -1632,6 +1634,7 @@
             saveProducts();
             salesHistory.push(transaction);
             localStorage.setItem('ec_sales_history', JSON.stringify(salesHistory));
+            pushTransactionStocksToWooCommerce(transaction);
 
             printReceipt(transaction);
 
@@ -1813,6 +1816,7 @@
             saveProducts();
             salesHistory.push(transaction);
             localStorage.setItem('ec_sales_history', JSON.stringify(salesHistory));
+            pushTransactionStocksToWooCommerce(transaction);
 
             closeExternalSaleModal();
             updateFinancialReports();
@@ -1909,6 +1913,10 @@
 
                 saveProducts();
                 localStorage.setItem('ec_sales_history', JSON.stringify(salesHistory));
+                // Bulk import telah mengubah stok tempatan; segerakkan setiap produk ke WooCommerce.
+                const bulkSyncProducts = {};
+                salesHistory.slice(-count).forEach(tx => (tx.items || []).forEach(item => { bulkSyncProducts[String(item.id)] = true; }));
+                Object.keys(bulkSyncProducts).forEach(id => { const p = products.find(x => String(x.id) === id); if(p) pushWooCommerceStock(p.id, p.stock); });
                 closeExternalSaleModal();
                 updateFinancialReports();
                 alert(`Berjaya mengimport ${count} jualan pukal dari fail CSV!`);
@@ -1990,128 +1998,195 @@
         }
         function closeStockMovementModal(){document.getElementById('stockMovementModal').classList.add('hidden');document.getElementById('stockMovementModal').classList.remove('flex');}
 
-        // WooCommerce REST API Integration (WITH STRICT LOCAL CATEGORIES: JUBAH, KURTA, KOPIAH, AKSESORI)
-        function openApiModal() { 
+        // SECURE WOOCOMMERCE API PROXY
+        // Browser menyimpan Web App URL + POS token sahaja.
+        // WooCommerce Consumer Key/Secret berada di Google Apps Script Script Properties.
+        function openApiModal() {
             if(currentUser && currentUser.role !== 'admin') {
                 alert('Akses Dihadkan: Hanya Admin dibenarkan membuka tetapan API.');
                 return;
             }
-            document.getElementById('apiModal').classList.remove('hidden'); 
+            loadApiSettings();
+            document.getElementById('apiModal').classList.remove('hidden');
         }
-        function closeApiModal() { document.getElementById('apiModal').classList.add('hidden'); }
+
+        function closeApiModal() {
+            document.getElementById('apiModal').classList.add('hidden');
+        }
+
+        function loadApiSettings() {
+            const proxyUrl = localStorage.getItem('ec_wc_proxy_url') || '';
+            const proxyToken = localStorage.getItem('ec_wc_proxy_token') || '';
+            const urlEl = document.getElementById('apiProxyUrl');
+            const tokenEl = document.getElementById('apiProxyToken');
+            if(urlEl) urlEl.value = proxyUrl;
+            if(tokenEl) tokenEl.value = proxyToken;
+        }
+
+        function getWooProxyConfig() {
+            return {
+                url: (localStorage.getItem('ec_wc_proxy_url') || '').trim().replace(/\/$/, ''),
+                token: (localStorage.getItem('ec_wc_proxy_token') || '').trim()
+            };
+        }
 
         function saveApiSettings() {
-            let url = document.getElementById('apiStoreUrl').value.trim();
-            const ck = document.getElementById('apiConsumerKey').value.trim();
-            const cs = document.getElementById('apiConsumerSecret').value.trim();
+            const url = document.getElementById('apiProxyUrl').value.trim().replace(/\/$/, '');
+            const token = document.getElementById('apiProxyToken').value.trim();
 
-            url = url.replace(/\[|\]|\(|\)/g, '').split('https').pop();
-            if(url) url = 'https' + url;
-            else url = 'https://empiredaie.com.my';
+            if(!url || !url.includes('/exec')) {
+                alert('Sila masukkan Google Apps Script Web App URL yang berakhir dengan /exec.');
+                return;
+            }
+            if(!token) {
+                alert('Sila masukkan POS API Token.');
+                return;
+            }
 
-            localStorage.setItem('ec_wc_url', url);
-            localStorage.setItem('ec_wc_ck', ck);
-            localStorage.setItem('ec_wc_cs', cs);
+            // Padam credential WooCommerce lama jika masih tersimpan daripada versi lama.
+            localStorage.removeItem('ec_wc_url');
+            localStorage.removeItem('ec_wc_ck');
+            localStorage.removeItem('ec_wc_cs');
+
+            localStorage.setItem('ec_wc_proxy_url', url);
+            localStorage.setItem('ec_wc_proxy_token', token);
 
             closeApiModal();
             syncWooCommerceProducts();
         }
 
-        function loadApiSettings() {
-            const url = localStorage.getItem('ec_wc_url') || 'https://empiredaie.com.my';
-            const ck = localStorage.getItem('ec_wc_ck') || '';
-            const cs = localStorage.getItem('ec_wc_cs') || '';
+        function secureProxyRequest(action, params = {}, onSuccess, onError) {
+            const cfg = getWooProxyConfig();
+            if(!cfg.url || !cfg.token) {
+                if(typeof onError === 'function') onError(new Error('Sambungan WooCommerce Proxy belum ditetapkan.'));
+                else {
+                    alert('Sila buka Tetapan API dan masukkan Web App URL + POS API Token.');
+                    openApiModal();
+                }
+                return;
+            }
 
-            document.getElementById('apiStoreUrl').value = url;
-            document.getElementById('apiConsumerKey').value = ck;
-            document.getElementById('apiConsumerSecret').value = cs;
+            const callbackName = '__ecWooCB_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+            const query = new URLSearchParams({
+                action: action,
+                token: cfg.token,
+                callback: callbackName,
+                ...params
+            });
+
+            const script = document.createElement('script');
+            let finished = false;
+            const cleanup = () => {
+                if(finished) return;
+                finished = true;
+                try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
+                if(script.parentNode) script.parentNode.removeChild(script);
+            };
+
+            window[callbackName] = function(result) {
+                cleanup();
+                if(result && result.success) {
+                    if(typeof onSuccess === 'function') onSuccess(result);
+                } else {
+                    const err = new Error((result && result.error) || 'API Proxy gagal.');
+                    if(typeof onError === 'function') onError(err);
+                    else alert('Ralat WooCommerce: ' + err.message);
+                }
+            };
+
+            script.onerror = function() {
+                cleanup();
+                const err = new Error('Tidak dapat menghubungi Google Apps Script Web App.');
+                if(typeof onError === 'function') onError(err);
+                else alert(err.message);
+            };
+
+            script.src = cfg.url + '?' + query.toString();
+            document.body.appendChild(script);
         }
 
-        async function syncWooCommerceProducts() {
+        function syncWooCommerceProducts() {
             if(currentUser && currentUser.role !== 'admin') {
                 alert('Akses Dihadkan: Hanya Admin dibenarkan menyegerakkan produk.');
                 return;
             }
 
-            let url = localStorage.getItem('ec_wc_url') || 'https://empiredaie.com.my';
-            url = url.replace(/\[|\]|\(|\)/g, '').trim();
-
-            const ck = localStorage.getItem('ec_wc_ck');
-            const cs = localStorage.getItem('ec_wc_cs');
-
-            const syncIcon = document.getElementById('syncIcon');
-
-            if (!ck || !cs) {
-                alert('Sila lengkapkan Tetapan Consumer Key & Consumer Secret WooCommerce terlebih dahulu.');
+            const cfg = getWooProxyConfig();
+            if(!cfg.url || !cfg.token) {
+                alert('Sila lengkapkan Tetapan Sambungan WooCommerce terlebih dahulu.');
                 openApiModal();
                 return;
             }
 
-            try {
-                syncIcon.classList.add('fa-spin');
-                const endpoint = `${url}/wp-json/wc/v3/products?consumer_key=${ck}&consumer_secret=${cs}&per_page=50`;
-                
-                const response = await fetch(endpoint);
-                if (!response.ok) throw new Error('Gagal menghubungi REST API WooCommerce');
+            const syncIcon = document.getElementById('syncIcon');
+            if(syncIcon) syncIcon.classList.add('fa-spin');
 
-                const data = await response.json();
-                
-                if (data.length > 0) {
-                    products = data.map(p => {
-                        let extractedSizes = [];
-                        let extractedColors = [];
+            secureProxyRequest('products', { per_page: 100, max_pages: 10 }, function(result) {
+                const data = result.products || [];
 
-                        if(p.attributes && p.attributes.length > 0) {
-                            p.attributes.forEach(attr => {
-                                const attrName = attr.name.toLowerCase();
-                                if(attrName.includes('saiz') || attrName.includes('size')) {
-                                    extractedSizes = attr.options;
-                                }
-                                if(attrName.includes('warna') || attrName.includes('color')) {
-                                    extractedColors = attr.options;
-                                }
-                            });
-                        }
-
-                        // STRICT LOCAL CATEGORY MAP (SMOOTH & UNCLUTTERED)
-                        let autoCategory = 'Aksesori';
-                        const nameLower = p.name.toLowerCase();
-
-                        if (nameLower.includes('kurta')) {
-                            autoCategory = 'Kurta';
-                        } else if (nameLower.includes('jubah')) {
-                            autoCategory = 'Jubah';
-                        } else if (nameLower.includes('kopiah')) {
-                            autoCategory = 'Kopiah';
-                        }
-
-                        return {
-                            id: p.id,
-                            name: p.name,
-                            category: autoCategory,
-                            price: parseFloat(p.price) || 0.00,
-                            stock: p.stock_quantity ?? 0,
-                            sku: p.sku || ('WC-' + p.id),
-                            cost: parseFloat(p.cost_of_goods_sold) || 0,
-                            minStock: 5,
-                            image: p.images.length > 0 ? p.images[0].src : '',
-                            sizes: extractedSizes.length > 0 ? extractedSizes : ['Free Size'],
-                            colors: extractedColors.length > 0 ? extractedColors : ['Piawai']
-                        };
-                    });
+                if(data.length > 0) {
+                    products = data.map(p => ({
+                        id: p.id,
+                        name: p.name,
+                        category: p.category || 'Aksesori',
+                        price: Number(p.price) || 0,
+                        stock: Number(p.stock) || 0,
+                        sku: p.sku || ('WC-' + p.id),
+                        cost: Number(p.cost) || 0,
+                        minStock: Number(p.minStock) || 5,
+                        image: p.image || '',
+                        sizes: Array.isArray(p.sizes) && p.sizes.length ? p.sizes : ['Free Size'],
+                        colors: Array.isArray(p.colors) && p.colors.length ? p.colors : ['Piawai'],
+                        wcType: p.type || 'simple',
+                        wcManageStock: !!p.manage_stock
+                    }));
 
                     normalizeProducts();
                     renderCategoryFilterButtons();
                     renderProducts();
                     populateProductFilterDropdown();
                     populateExternalSaleModalDropdowns();
+                    saveProducts();
                     alert(`Berjaya menyegerakkan ${products.length} produk dari empiredaie.com.my!`);
+                } else {
+                    alert('Sambungan berjaya tetapi tiada produk diterima daripada WooCommerce.');
                 }
-            } catch (err) {
-                alert('CORS / Ralat API: ' + err.message);
-            } finally {
-                syncIcon.classList.remove('fa-spin');
+            }, function(err) {
+                alert('Ralat WooCommerce Proxy: ' + err.message);
+            });
+
+            // Spinner akan dihentikan selepas 12 saat jika browser masih menunggu callback.
+            setTimeout(() => { if(syncIcon) syncIcon.classList.remove('fa-spin'); }, 12000);
+        }
+
+        function pushWooCommerceStock(productId, newStock, callback) {
+            const cfg = getWooProxyConfig();
+            if(!cfg.url || !cfg.token || !productId) {
+                if(typeof callback === 'function') callback(false, 'Proxy belum ditetapkan');
+                return;
             }
+
+            secureProxyRequest('setStock', {
+                id: String(productId),
+                stock: String(Math.max(0, Math.floor(Number(newStock) || 0)))
+            }, function(result) {
+                if(typeof callback === 'function') callback(true, result);
+            }, function(err) {
+                console.warn('WooCommerce stock update gagal:', err.message);
+                if(typeof callback === 'function') callback(false, err.message);
+            });
+        }
+
+        function pushTransactionStocksToWooCommerce(transaction) {
+            if(!transaction || !Array.isArray(transaction.items)) return;
+            const seen = {};
+            transaction.items.forEach(item => {
+                const id = String(item.id || '');
+                if(!id || seen[id]) return;
+                seen[id] = true;
+                const p = products.find(x => String(x.id) === id);
+                if(p) pushWooCommerceStock(p.id, p.stock);
+            });
         }
 
         // Financial Reports & Switch Tabs
