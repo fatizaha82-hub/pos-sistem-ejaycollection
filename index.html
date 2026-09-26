@@ -1020,6 +1020,10 @@
         let salesHistory = []; 
         let stockMovements = JSON.parse(localStorage.getItem('ec_stock_movements')) || [];
 
+        // SYSTEM AUTO-LOGOUT INACTIVITY TIMER (5 MINIT)
+        let inactivityTimer = null;
+        const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 Minit
+
         let receiptSettings = {
             name: 'EJAY COLLECTION',
             web: 'empiredaie.com.my',
@@ -1040,6 +1044,7 @@
             populateExternalSaleModalDropdowns();
             fetchSettingsFromGSheet();     
             fetchSalesHistoryFromGSheet(); 
+            initInactivityTracker(); // Pemantau masa idle
         };
 
         function normalizeProducts() {
@@ -1075,6 +1080,29 @@
             localStorage.setItem('ec_stock_movements', JSON.stringify(stockMovements));
         }
 
+        // PEMANTAU AUTO-LOGOUT (INACTIVITY TRACKER)
+        function initInactivityTracker() {
+            const activityEvents = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart', 'focus'];
+            activityEvents.forEach(evt => {
+                window.addEventListener(evt, resetInactivityTimer, true);
+            });
+            resetInactivityTimer();
+        }
+
+        function resetInactivityTimer() {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            if (currentUser) {
+                inactivityTimer = setTimeout(triggerAutoLogout, INACTIVITY_TIMEOUT);
+            }
+        }
+
+        function triggerAutoLogout() {
+            if (currentUser) {
+                alert('Masa tamat: Tiada aktiviti dikesan. Sistem telah dilog keluar secara automatik demi keselamatan.');
+                handleLogout();
+            }
+        }
+
         // LOGIN LOGIC
         function handleLogin(e) {
             e.preventDefault();
@@ -1096,6 +1124,7 @@
             sessionStorage.setItem('ec_active_user', JSON.stringify(currentUser));
             document.getElementById('loginModal').classList.add('hidden');
             applyUserRolePermissions();
+            resetInactivityTimer();
         }
 
         function checkActiveSession() {
@@ -1104,6 +1133,7 @@
                 currentUser = JSON.parse(savedUser);
                 document.getElementById('loginModal').classList.add('hidden');
                 applyUserRolePermissions();
+                resetInactivityTimer();
             } else {
                 document.getElementById('loginModal').classList.remove('hidden');
             }
@@ -1122,6 +1152,7 @@
         }
 
         function handleLogout() {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
             sessionStorage.removeItem('ec_active_user');
             currentUser = null;
             document.getElementById('loginModal').classList.remove('hidden');
