@@ -147,7 +147,6 @@
                 <div>
                     <label class="block text-xs text-slate-700 mb-1 font-semibold">ID / Kata Laluan:</label>
                     <input type="password" id="loginPassword" placeholder="Masukkan password" required class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
-                    <!-- <p class="text-[10px] text-slate-500 mt-1">ID Admin: <span class="text-gold-600 font-bold">admin123</span> | ID Staf: <span class="text-gold-600 font-bold">staf123</span></p>-->
                 </div>
                 <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-md transition">
                     Log Masuk POS
@@ -608,7 +607,7 @@
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
                 <div>
                     <h3 class="font-heading font-bold text-gold-600 text-lg">Laporan Kewangan & Item Produk</h3>
-                    <!-- KAWASAN TEMPOH LAPORAN CETAKAN -->
+                    <!-- KAWASAN TEMPOH LAPORAN DITAMBAHKAN LENGKAP -->
                     <p class="text-xs text-slate-600 font-semibold" id="reportPeriodText">Laporan Bagi Tempoh: Keseluruhan Rekod Jualan</p>
                 </div>
                 <button onclick="closeReportsModal()" class="text-slate-400 hover:text-slate-600 no-print-report"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -625,17 +624,21 @@
 
             <div class="flex-1 overflow-y-auto py-4 space-y-4">
                 
-                <!-- TAB 1: Ringkasan Transaksi -->
+                <!-- TAB 1: Ringkasan Transaksi (DENGAN RUANGAN JULAT TARIKH MULA & AKHIR) -->
                 <div id="tabContentSummary" class="report-content">
                     <div class="bg-greycair-50 p-3 rounded-lg border border-greycair-200 mb-4 flex flex-col md:flex-row items-center justify-between gap-3 no-print-report">
                         <div class="flex items-center space-x-2 flex-wrap gap-y-2 w-full md:w-auto">
                             <div>
-                                <label class="text-[10px] text-slate-500 block">Tapis Bulan:</label>
-                                <input type="month" id="summaryMonthFilter" onchange="updateFinancialReports()" class="bg-white border border-greycair-300 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                                <label class="text-[10px] text-slate-500 block font-bold">Tarikh Mula:</label>
+                                <input type="date" id="summaryStartDateFilter" onchange="updateFinancialReports()" class="bg-white border border-greycair-300 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-gold-500">
                             </div>
                             <div>
-                                <label class="text-[10px] text-slate-500 block">Tapis Tarikh Spesifik:</label>
-                                <input type="date" id="summaryDateFilter" onchange="updateFinancialReports()" class="bg-white border border-greycair-300 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                                <label class="text-[10px] text-slate-500 block font-bold">Tarikh Akhir:</label>
+                                <input type="date" id="summaryEndDateFilter" onchange="updateFinancialReports()" class="bg-white border border-greycair-300 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-slate-500 block">Atau Tapis Bulan:</label>
+                                <input type="month" id="summaryMonthFilter" onchange="clearSummaryDateInputs(); updateFinancialReports();" class="bg-white border border-greycair-300 rounded px-2.5 py-1 text-xs text-slate-800 focus:outline-none focus:border-gold-500">
                             </div>
                             <button onclick="resetDateFilters()" class="mt-4 px-2.5 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 text-xs rounded border border-greycair-300">
                                 Reset Tarikh
@@ -1198,7 +1201,6 @@
             applyUserRolePermissions();
         }
 
-        // FUNGSI MEMADAM REKOD DUPLIKAT TERUS DARI GSHEET & ROLLBACK STOK
         function deleteTransactionByOrderNo(orderNo) {
             if (!currentUser || currentUser.role !== 'admin') {
                 alert('Akses Dihadkan: Hanya Admin dibenarkan memadam rekod jualan.');
@@ -1209,7 +1211,6 @@
                 const targetTx = salesHistory.find(t => t.orderNo === orderNo);
 
                 secureProxyRequest('deleteSingleSale', { orderNo: orderNo }, function(res) {
-                    // Pulihkan stok produk
                     if (targetTx && Array.isArray(targetTx.items)) {
                         targetTx.items.forEach(item => {
                             const p = products.find(x => String(x.id) === String(item.id));
@@ -1222,7 +1223,6 @@
                         saveProducts();
                     }
 
-                    // Padam dari memori tempatan
                     salesHistory = salesHistory.filter(t => t.orderNo !== orderNo);
                     renderStaffHistoryTable();
                     updateFinancialReports();
@@ -1328,8 +1328,14 @@
             document.getElementById('summaryMonthFilter').value = formattedMonth;
         }
 
-        function resetDateFilters() {
+        function clearSummaryDateInputs() {
+            document.getElementById('summaryStartDateFilter').value = '';
+            document.getElementById('summaryEndDateFilter').value = '';
             document.getElementById('summaryDateFilter').value = '';
+        }
+
+        function resetDateFilters() {
+            clearSummaryDateInputs();
             setCurrentMonthFilter();
             updateFinancialReports();
         }
@@ -2254,17 +2260,21 @@
         let currentFilteredTransactions = [];
 
         function updateFinancialReports() {
-            const selectedMonth = document.getElementById('reportMonthFilter').value;
+            const startDate = document.getElementById('summaryStartDateFilter').value;
+            const endDate = document.getElementById('summaryEndDateFilter').value;
             const summaryMonth = document.getElementById('summaryMonthFilter').value;
-            const summaryDate = document.getElementById('summaryDateFilter').value;
+            const selectedMonth = document.getElementById('reportMonthFilter').value;
             const selectedProductFilter = document.getElementById('reportProductFilter').value;
 
-            // DIKEMASKINI: FORMAT & KEMASKINI TEKS TEMPOH LAPORAN UNTUK CETAKAN
+            // DENGAN SOKONGAN JULAT TARIKH MULA DAN AKHIR
             const reportPeriodTextEl = document.getElementById('reportPeriodText');
-            if (summaryDate) {
-                const parts = summaryDate.split('-');
-                const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                reportPeriodTextEl.innerText = `Laporan Pada Tarikh: ${formattedDate}`;
+            if (startDate && endDate) {
+                const startParts = startDate.split('-');
+                const endParts = endDate.split('-');
+                reportPeriodTextEl.innerText = `Laporan Bagi Tempoh: ${startParts[2]}/${startParts[1]}/${startParts[0]} hingga ${endParts[2]}/${endParts[1]}/${endParts[0]}`;
+            } else if (startDate) {
+                const startParts = startDate.split('-');
+                reportPeriodTextEl.innerText = `Laporan Dari Tarikh: ${startParts[2]}/${startParts[1]}/${startParts[0]}`;
             } else if (summaryMonth) {
                 const parts = summaryMonth.split('-');
                 reportPeriodTextEl.innerText = `Laporan Bagi Tempoh: ${parts[1]}/${parts[0]}`;
@@ -2284,11 +2294,13 @@
 
             const summaryFilteredSales = salesHistory.filter(tx => {
                 const txDate = new Date(tx.isoDate || tx.date);
-                if(summaryDate) {
-                    const yearMonthDay = txDate.toISOString().slice(0,10);
-                    return yearMonthDay === summaryDate;
-                }
-                if(summaryMonth) {
+                const txDateStr = txDate.toISOString().slice(0,10);
+
+                if (startDate && endDate) {
+                    return txDateStr >= startDate && txDateStr <= endDate;
+                } else if (startDate) {
+                    return txDateStr >= startDate;
+                } else if (summaryMonth) {
                     const yearMonth = txDate.toISOString().slice(0,7);
                     return yearMonth === summaryMonth;
                 }
