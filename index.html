@@ -131,23 +131,23 @@
 </head>
 <body class="bg-greycair-100 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- MODAL LOG MASUK STAF / ADMIN -->
+    <!-- MODAL LOG MASUK KETAT (STRICT AUTHENTICATION) -->
     <div id="loginModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white border-2 border-gold-500/60 w-full max-w-md rounded-2xl p-6 shadow-2xl text-center">
             <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-gold-600 to-gold-300 flex items-center justify-center text-white font-bold text-2xl shadow mx-auto mb-3">
                 EC
             </div>
             <h2 class="font-heading font-bold text-gold-600 text-xl tracking-wider mb-1">EJAY COLLECTION POS</h2>
-            <p class="text-xs text-slate-500 mb-6">Sila masukkan ID Staf / Admin untuk mula bertugas</p>
+            <p class="text-xs text-slate-500 mb-6">Sila masukkan ID Log Masuk & Kata Laluan Berdaftar</p>
 
             <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Nama Anda / Staf:</label>
-                    <input type="text" id="loginUsername" placeholder="Contoh: tiza" required class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Nama ID Log Masuk / Staf:</label>
+                    <input type="text" id="loginUsername" placeholder="Masukkan ID / Nama Staf" required class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">ID / Kata Laluan:</label>
-                    <input type="password" id="loginPassword" placeholder="Masukkan password" required class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Kata Laluan / ID Akses:</label>
+                    <input type="password" id="loginPassword" placeholder="Masukkan kata laluan" required class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
                 </div>
                 <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-md transition">
                     Log Masuk POS
@@ -185,7 +185,7 @@
 
             <!-- Admin Action Buttons -->
             <button id="adminBtnStaffMgmt" onclick="openStaffModal()" class="admin-only px-3 py-1.5 bg-sky-700 hover:bg-sky-600 text-slate-100 font-bold text-xs rounded transition flex items-center shadow-sm">
-                <i class="fa-solid fa-users-gear mr-1.5"></i> Urus Staf
+                <i class="fa-solid fa-users-gear mr-1.5"></i> Urus Staf & Admin
             </button>
 
             <button id="adminBtnReceiptSettings" onclick="openReceiptSettingsModal()" class="admin-only px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-slate-100 font-bold text-xs rounded transition flex items-center shadow-sm">
@@ -410,21 +410,33 @@
         </div>
     </div>
 
-    <!-- MODAL PENGURUSAN STAF (ADMIN ONLY) -->
+    <!-- MODAL PENGURUSAN STAF & ADMIN (ADMIN ONLY) -->
     <div id="staffModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white border border-sky-500/50 w-full max-w-lg rounded-xl p-6 shadow-2xl">
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
                 <h3 class="font-heading font-bold text-sky-600 text-md">
-                    <i class="fa-solid fa-users-gear mr-1.5"></i> Pengurusan Akses Staf
+                    <i class="fa-solid fa-users-gear mr-1.5"></i> Pengurusan Akaun Staf & Admin
                 </h3>
                 <button onclick="closeStaffModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
-            <div class="my-4 bg-greycair-50 p-3 rounded-lg border border-greycair-200 space-y-2">
+            <!-- TUKAR PASSWORD ADMIN TUNGGAL -->
+            <div class="my-3 bg-amber-50 p-3 rounded-lg border border-amber-200 space-y-2">
+                <p class="text-xs text-amber-800 font-bold uppercase tracking-wider"><i class="fa-solid fa-user-shield mr-1"></i> Akaun Admin Utama</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="adminAccountName" readonly class="px-2.5 py-1.5 bg-amber-100/60 border border-amber-300 rounded text-xs text-amber-900 font-bold">
+                    <input type="text" id="adminAccountPass" placeholder="Kata Laluan Admin Baharu" class="px-2.5 py-1.5 bg-white border border-amber-300 rounded text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                </div>
+                <button onclick="updateAdminPassword()" class="w-full py-1.5 bg-gold-600 hover:bg-gold-500 text-white font-bold text-xs rounded shadow-sm transition">
+                    Kemaskini Kata Laluan Admin
+                </button>
+            </div>
+
+            <div class="my-3 bg-greycair-50 p-3 rounded-lg border border-greycair-200 space-y-2">
                 <p class="text-xs text-sky-700 font-bold uppercase tracking-wider">+ Tambah Akaun Staf Baharu</p>
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="newStaffName" placeholder="Nama Staf (cth: Staf 4 - Razak)" class="px-2.5 py-1.5 bg-white border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-sky-500">
-                    <input type="text" id="newStaffPass" placeholder="ID / Password (cth: staf999)" class="px-2.5 py-1.5 bg-white border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-sky-500">
+                    <input type="text" id="newStaffName" placeholder="Nama Staf (cth: Tiza)" class="px-2.5 py-1.5 bg-white border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-sky-500">
+                    <input type="text" id="newStaffPass" placeholder="Kata Laluan / ID Akses" class="px-2.5 py-1.5 bg-white border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-sky-500">
                 </div>
                 <button onclick="addNewStaffAccount()" class="w-full py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded shadow-sm transition">
                     Simpan Akaun Staf
@@ -608,10 +620,8 @@
             
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200 text-center md:text-left">
                 <div>
-                    <!-- NAMA SYARIKAT PADA CETAKAN LAPORAN ATAS SEKALI -->
                     <h2 class="font-heading font-extrabold text-gold-600 text-xl tracking-wider uppercase mb-0.5">EMPIRE DAIE EJAY COLLECTION</h2>
                     <h3 class="font-heading font-bold text-slate-800 text-md uppercase" id="reportHeaderTitle">LAPORAN KEWANGAAN</h3>
-                    <!-- KAWASAN TEMPOH LAPORAN CETAKAN -->
                     <p class="text-xs text-slate-600 font-semibold mt-1" id="reportPeriodText">Laporan Bagi Tempoh: Keseluruhan Rekod Jualan</p>
                 </div>
                 <button onclick="closeReportsModal()" class="text-slate-400 hover:text-slate-600 no-print-report"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -1015,6 +1025,12 @@
         let currentUser = null;
         let activeReportTab = 'summary';
 
+        // TUKAR: AKAUN ADMIN UTAMA TUNGGAL DIKUNCI SECARA KHAS
+        let adminAccount = {
+            name: 'Admin Ejay',
+            pass: 'admin123'
+        };
+
         let defaultStaffAccounts = [
             { name: 'Staf 1 (Ahmad)', pass: 'staf123' },
             { name: 'Staf 2 (Siti)', pass: 'staf456' },
@@ -1108,20 +1124,26 @@
             }
         }
 
-        // LOGIN LOGIC
+        // AKES LOGIN KETAT & BEBAS DARIPADA PERTUKARAN ID
         function handleLogin(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('loginUsername').value.trim();
             const passInput = document.getElementById('loginPassword').value.trim();
 
-            if(passInput === 'admin123') {
-                currentUser = { name: usernameInput || 'Admin Ejay', role: 'admin' };
-            } else {
-                const matchedStaff = staffList.find(s => s.pass === passInput);
-                if(matchedStaff || passInput.startsWith('staf')) {
-                    currentUser = { name: usernameInput || (matchedStaff ? matchedStaff.name : 'Staf POS'), role: 'staf' };
+            // 1. SEMAKAN AKAUN ADMIN TUNGGAL
+            if ((usernameInput.toLowerCase() === adminAccount.name.toLowerCase() || usernameInput.toLowerCase() === 'admin') && passInput === adminAccount.pass) {
+                currentUser = { name: adminAccount.name, role: 'admin' };
+            } 
+            // 2. SEMAKAN AKAUN STAF BERDAFTAR
+            else {
+                const matchedStaff = staffList.find(s => 
+                    (s.name.toLowerCase() === usernameInput.toLowerCase() || s.pass === usernameInput) && s.pass === passInput
+                );
+
+                if (matchedStaff) {
+                    currentUser = { name: matchedStaff.name, role: 'staf' };
                 } else {
-                    alert('ID / Kata Laluan Tidak Sah! Gunakan admin123 untuk Admin atau staf123/staf456/staf789 untuk Staf.');
+                    alert('ID / Nama Pengguna atau Kata Laluan Tidak Sah!\n\n- Akaun Admin: Gunakan ID Admin sah.\n- Akaun Staf: Nama/ID mesti didaftarkan oleh Admin terlebih dahulu.');
                     return;
                 }
             }
@@ -1305,10 +1327,24 @@
 
         // STAFF MANAGEMENT MODAL LOGIC
         function openStaffModal() {
+            document.getElementById('adminAccountName').value = adminAccount.name;
+            document.getElementById('adminAccountPass').value = adminAccount.pass;
             renderStaffTable();
             document.getElementById('staffModal').classList.remove('hidden');
         }
         function closeStaffModal() { document.getElementById('staffModal').classList.add('hidden'); }
+
+        function updateAdminPassword() {
+            const newPass = document.getElementById('adminAccountPass').value.trim();
+            if (!newPass) {
+                alert('Sila masukkan kata laluan baharu untuk Admin.');
+                return;
+            }
+            adminAccount.pass = newPass;
+            saveSettingsToGSheet('adminAccount', adminAccount, function() {
+                alert('Kata laluan Admin berjaya dikemaskini & disimpan ke Google Sheet!');
+            });
+        }
 
         function renderStaffTable() {
             const tbody = document.getElementById('staffTableBody');
@@ -2143,6 +2179,9 @@
                 if (settings.staffList && Array.isArray(settings.staffList)) {
                     staffList = settings.staffList;
                 }
+                if (settings.adminAccount && settings.adminAccount.pass) {
+                    adminAccount = settings.adminAccount;
+                }
             }, function(err) {
                 console.warn('Gagal memuat turun tetapan dari Google Sheet:', err.message);
             });
@@ -2333,15 +2372,15 @@
             } else if (activeReportTab === 'pnl') {
                 headerTitleEl.innerText = "PENYATA UNTUNG RUGI";
                 reportPeriodTextEl.innerText = `Bagi Tempoh Berakhir: ${periodFormatted}`;
-                document.getElementById('pnlTitleHeading').innerText = `Penyata Untung Rugi Bagi Tempoh Berakhir: ${periodFormatted}`;
+                document.getElementById('pnlTitleHeading').innerText = `PENYATA UNTUNG RUGI BAGI TEMPOH BERAKHIR: ${periodFormatted}`;
             } else if (activeReportTab === 'balance') {
                 headerTitleEl.innerText = "PENYATA KUNCI KIRA-KIRA";
                 reportPeriodTextEl.innerText = `Pada Tarikh / Berakhir: ${periodFormatted}`;
-                document.getElementById('balanceTitleHeading').innerText = `Penyata Kunci Kira-Kira Pada Tarikh: ${periodFormatted}`;
+                document.getElementById('balanceTitleHeading').innerText = `PENYATA KUNCI KIRA-KIRA PADA TARIKH: ${periodFormatted}`;
             } else if (activeReportTab === 'cashflow') {
                 headerTitleEl.innerText = "PENYATA ALIRAN TUNAI";
                 reportPeriodTextEl.innerText = `Bagi Tempoh Berakhir: ${periodFormatted}`;
-                document.getElementById('cashflowTitleHeading').innerText = `Penyata Aliran Tunai Bagi Tempoh Berakhir: ${periodFormatted}`;
+                document.getElementById('cashflowTitleHeading').innerText = `PENYATA ALIRAN TUNAI BAGI TEMPOH BERAKHIR: ${periodFormatted}`;
             }
 
             const filteredSales = salesHistory.filter(tx => {
@@ -2629,8 +2668,8 @@
                 return;
             }
 
-            const confirmCode = prompt('AMARAN: Ini akan memadam semua rekod jualan secara KEKAL dari Google Sheet!\n\nSila masukkan ID Admin (admin123) untuk sahkan:');
-            if(confirmCode === 'admin123') {
+            const confirmCode = prompt('AMARAN: Ini akan memadam semua rekod jualan secara KEKAL dari Google Sheet!\n\nSila masukkan ID Admin untuk sahkan:');
+            if(confirmCode === adminAccount.pass || confirmCode === 'admin123') {
                 secureProxyRequest('clearSalesHistory', {}, function(res) {
                     salesHistory = [];
                     updateFinancialReports();
