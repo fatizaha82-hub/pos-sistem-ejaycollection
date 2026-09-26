@@ -944,7 +944,7 @@
         </div>
     </div>
 
-    <!-- PRINTABLE RECEIPT CONTAINER (THERMAL PRINTER RECEIPT) -->
+    <!-- PRINTABLE RECEIPT CONTAINER (THERMAL RECEIPT PRINT) -->
     <div id="printable-receipt" class="hidden">
         <div style="text-align: center; margin-bottom: 8px;">
             <h2 style="font-size: 16px; font-weight: bold; margin: 0; color: #000;" id="rcpStoreName">EJAY COLLECTION</h2>
@@ -958,7 +958,7 @@
             <p style="margin: 2px 0;" id="rcpOrderNo">No: #EC-0000</p>
             <p style="margin: 2px 0;" id="rcpStaff">Juruwang/Staf: -</p>
             <p style="margin: 2px 0;" id="rcpCustomer">Pelanggan: -</p>
-            <!-- KAEDAH BAYARAN DITAMBAH DI SINI -->
+            <!-- KAEDAH BAYARAN CETAK -->
             <p style="margin: 2px 0; font-weight: bold;" id="rcpPaymentMethod">Kaedah Bayaran: Tunai</p>
         </div>
         <p style="margin: 2px 0; color: #000;">--------------------------------</p>
@@ -989,7 +989,7 @@
     </div>
 
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- JAVASCRIPT LOGIC INTEGRATION -->
     <script>
         const defaultProducts = [
             { id: 101, name: 'Jubah Sayidina Hamza', category: 'Jubah', price: 139.00, stock: 15, sku: 'JUB-HAMZA', cost: 70, minStock: 3, image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400', sizes: ['S', 'M', 'L', 'XL', 'XXL'], colors: ['Hitam', 'Putih', 'Navy Blue', 'Emerald Green'] },
@@ -1000,20 +1000,42 @@
             { id: 106, name: 'Seluar Kurta Slim Fit', category: 'Aksesori', price: 59.00, stock: 18, sku: 'SEL-KURTA', cost: 30, minStock: 5, image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400', sizes: ['M', 'L', 'XL', 'XXL'], colors: ['Metallic Grey', 'Hitam', 'Putih'] }
         ];
 
-        const defaultStaffAccounts = [
-            { name: 'Staf 1 (Ahmad)', pass: 'staf123' },
-            { name: 'Staf 2 (Siti)', pass: 'staf456' },
-            { name: 'Staf 3 (Farhan)', pass: 'staf789' }
-        ];
-
         let products = JSON.parse(localStorage.getItem('ec_products')) || [...defaultProducts];
         let cart = [];
         let selectedCategory = 'All';
         let paymentMethod = 'Cash';
         let currentUser = null;
-        let staffList = JSON.parse(localStorage.getItem('ec_staff_list')) || defaultStaffAccounts;
-        let salesHistory = []; // Dimuat terus dari Google Sheet Database
+
+        let defaultStaffAccounts = [
+            { name: 'Staf 1 (Ahmad)', pass: 'staf123' },
+            { name: 'Staf 2 (Siti)', pass: 'staf456' },
+            { name: 'Staf 3 (Farhan)', pass: 'staf789' }
+        ];
+
+        let staffList = defaultStaffAccounts;
+        let salesHistory = []; // Dimuat turun terus dari GSHEET
         let stockMovements = JSON.parse(localStorage.getItem('ec_stock_movements')) || [];
+
+        let receiptSettings = {
+            name: 'EJAY COLLECTION',
+            web: 'empiredaie.com.my',
+            address: 'No. 123, Jalan Daie Utama, Pusat Perniagaan Empire, 43000 Kajang, Selangor',
+            phone: '+6012-345 6789'
+        };
+
+        window.onload = function() {
+            normalizeProducts();
+            checkActiveSession();
+            loadApiSettings();
+            setCurrentMonthFilter();
+            renderCategoryFilterButtons();
+            renderProducts();
+            renderCart();
+            populateProductFilterDropdown();
+            populateExternalSaleModalDropdowns();
+            fetchSettingsFromGSheet();     // Load Tetapan Resit & Staf dari GSHEET
+            fetchSalesHistoryFromGSheet(); // Load Sejarah Transaksi dari GSHEET
+        };
 
         function normalizeProducts() {
             products = products.map((p, idx) => ({
@@ -1040,27 +1062,6 @@
             if(stockMovements.length>1000) stockMovements=stockMovements.slice(0,1000);
             localStorage.setItem('ec_stock_movements', JSON.stringify(stockMovements));
         }
-
-        let receiptSettings = JSON.parse(localStorage.getItem('ec_receipt_settings')) || {
-            name: 'EJAY COLLECTION',
-            web: 'empiredaie.com.my',
-            address: 'No. 123, Jalan Daie Utama, Pusat Perniagaan Empire, 43000 Kajang, Selangor',
-            phone: '+6012-345 6789'
-        };
-
-        window.onload = function() {
-            normalizeProducts();
-            checkActiveSession();
-            loadReceiptSettings();
-            loadApiSettings();
-            setCurrentMonthFilter();
-            renderCategoryFilterButtons();
-            renderProducts();
-            renderCart();
-            populateProductFilterDropdown();
-            populateExternalSaleModalDropdowns();
-            fetchSalesHistoryFromGSheet(); // Tarik semula sejarah jualan dari GSHEET
-        };
 
         // LOGIN LOGIC
         function handleLogin(e) {
@@ -1184,7 +1185,7 @@
             });
         }
 
-        // RECEIPT SETTINGS MODAL LOGIC
+        // RECEIPT SETTINGS MODAL LOGIC (SIMPAN KE GSHEET)
         function openReceiptSettingsModal() {
             document.getElementById('settingBoutiqueName').value = receiptSettings.name;
             document.getElementById('settingBoutiqueWeb').value = receiptSettings.web;
@@ -1200,10 +1201,11 @@
             receiptSettings.address = document.getElementById('settingBoutiqueAddress').value.trim();
             receiptSettings.phone = document.getElementById('settingBoutiquePhone').value.trim();
 
-            localStorage.setItem('ec_receipt_settings', JSON.stringify(receiptSettings));
-            loadReceiptSettings();
-            closeReceiptSettingsModal();
-            alert('Tetapan maklumat resit berjaya dikemaskini!');
+            saveSettingsToGSheet('receiptSettings', receiptSettings, function() {
+                loadReceiptSettings();
+                closeReceiptSettingsModal();
+                alert('Tetapan resit berjaya disimpan secara kekal ke Google Sheet!');
+            });
         }
 
         function loadReceiptSettings() {
@@ -1216,7 +1218,7 @@
             document.getElementById('rcpStorePhone').innerText = `Tel: ${receiptSettings.phone}`;
         }
 
-        // STAFF MANAGEMENT MODAL LOGIC
+        // STAFF MANAGEMENT MODAL LOGIC (SIMPAN KE GSHEET)
         function openStaffModal() {
             renderStaffTable();
             document.getElementById('staffModal').classList.remove('hidden');
@@ -1250,20 +1252,20 @@
             }
 
             staffList.push({ name, pass });
-            localStorage.setItem('ec_staff_list', JSON.stringify(staffList));
-
-            document.getElementById('newStaffName').value = '';
-            document.getElementById('newStaffPass').value = '';
-
-            renderStaffTable();
-            alert(`Akaun untuk ${name} berjaya ditambah!`);
+            saveSettingsToGSheet('staffList', staffList, function() {
+                document.getElementById('newStaffName').value = '';
+                document.getElementById('newStaffPass').value = '';
+                renderStaffTable();
+                alert(`Akaun untuk ${name} berjaya ditambah & disimpan ke Google Sheet!`);
+            });
         }
 
         function deleteStaffAccount(index) {
             if(confirm('Adakah anda pasti mahu memadam akaun staf ini?')) {
                 staffList.splice(index, 1);
-                localStorage.setItem('ec_staff_list', JSON.stringify(staffList));
-                renderStaffTable();
+                saveSettingsToGSheet('staffList', staffList, function() {
+                    renderStaffTable();
+                });
             }
         }
 
@@ -1568,7 +1570,7 @@
             });
         }
 
-        /* PRINT RECEIPT WITH PAYMENT METHOD FIX */
+        /* PRINT RECEIPT WITH PAYMENT METHOD DISPLAY */
         function printReceipt(transaction) {
             document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col print-mode-receipt";
 
@@ -1577,7 +1579,7 @@
             document.getElementById('rcpStaff').innerText = `Juruwang/Staf: ${transaction.staffName || 'Staf POS'}`;
             document.getElementById('rcpCustomer').innerText = `Pelanggan: ${transaction.custName || 'Walk-In'} (${transaction.custPhone || '-'})`;
             
-            // KAEDAH BAYARAN DIPAPARKAN DENGAN JELAS PADA RESIT
+            // KAEDAH BAYARAN PAPAR PADA RESIT
             document.getElementById('rcpPaymentMethod').innerText = `Kaedah Bayaran: ${transaction.paymentMethod || 'Tunai'}`;
             
             const rcpItems = document.getElementById('rcpItems');
@@ -1973,6 +1975,7 @@
 
             closeApiModal();
             syncWooCommerceProducts();
+            fetchSettingsFromGSheet();
             fetchSalesHistoryFromGSheet();
         }
 
@@ -2024,6 +2027,30 @@
 
             script.src = cfg.url + '?' + query.toString();
             document.body.appendChild(script);
+        }
+
+        // AMBIL & SIMPAN TETAPAN RESIT & STAF KE GSHEET
+        function fetchSettingsFromGSheet() {
+            secureProxyRequest('getSettings', {}, function(result) {
+                const settings = result.settings || {};
+                if (settings.receiptSettings) {
+                    receiptSettings = settings.receiptSettings;
+                    loadReceiptSettings();
+                }
+                if (settings.staffList && Array.isArray(settings.staffList)) {
+                    staffList = settings.staffList;
+                }
+            }, function(err) {
+                console.warn('Gagal memuat turun tetapan dari Google Sheet:', err.message);
+            });
+        }
+
+        function saveSettingsToGSheet(key, value, callback) {
+            secureProxyRequest('saveSettings', { data: JSON.stringify({ key, value }) }, function(res) {
+                if (typeof callback === 'function') callback();
+            }, function(err) {
+                alert('Gagal menyimpan tetapan ke Google Sheet: ' + err.message);
+            });
         }
 
         function fetchSalesHistoryFromGSheet() {
