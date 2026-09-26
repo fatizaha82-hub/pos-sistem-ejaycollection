@@ -173,6 +173,7 @@
                 <i class="fa-solid fa-user-check mr-1.5 text-emerald-600"></i> <span id="activeUserBadge">Pengguna: -</span>
             </div>
 
+            <!-- BUTANG SEJARAH JUALAN -->
             <button onclick="openSalesHistoryModal()" class="px-3 py-1.5 bg-white hover:bg-greycair-50 text-slate-700 text-xs font-semibold rounded border border-greycair-300 transition flex items-center shadow-sm">
                 <i class="fa-solid fa-clock-rotate-left mr-1.5 text-gold-600"></i> Sejarah Jualan
             </button>
@@ -312,20 +313,21 @@
                     <span id="changeText" class="text-emerald-600">RM 0.00</span>
                 </div>
 
-                <button onclick="processCheckout()" class="w-full py-3 bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-white font-bold text-sm tracking-wider uppercase rounded-lg shadow-md transition">
-                    Bayar & Cetak Resit
+                <!-- ANTI DOUBLE-SUBMIT CHECKOUT BUTTON -->
+                <button id="checkoutBtn" onclick="processCheckout()" class="w-full py-3 bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-white font-bold text-sm tracking-wider uppercase rounded-lg shadow-md transition flex items-center justify-center">
+                    <span>Bayar & Cetak Resit</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL SEJARAH JUALAN STAF (DISEGERAKKAN KE GSHEET KEKAL) -->
+    <!-- MODAL SEJARAH JUALAN STAF (DISEGERAKKAN KE GSHEET KEKAL & BOLEH PADAM REKOD DUPLIKAT) -->
     <div id="salesHistoryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white border border-gold-500/40 w-full max-w-4xl rounded-xl p-6 shadow-2xl flex flex-col max-h-[90vh]">
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
                 <div>
                     <h3 class="font-heading font-bold text-gold-600 text-lg">Sejarah Jualan Rekod Kekal (Google Sheet)</h3>
-                    <p class="text-xs text-slate-500">Cari transaksi lama dan cetak semula resit pelanggan</p>
+                    <p class="text-xs text-slate-500">Cari transaksi lama, cetak semula resit atau padam transaksi bertindih.</p>
                 </div>
                 <button onclick="closeSalesHistoryModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
@@ -1011,7 +1013,7 @@
         ];
 
         let staffList = defaultStaffAccounts;
-        let salesHistory = [];
+        let salesHistory = []; 
         let stockMovements = JSON.parse(localStorage.getItem('ec_stock_movements')) || [];
 
         let receiptSettings = {
@@ -1040,7 +1042,6 @@
             products = products.map((p, idx) => {
                 const priceVal = Number(p.price ?? 0);
                 const costVal = Number(p.cost ?? 0);
-                // IF KOS IS 0, FALLBACK TO 50% OF PRICE SO EQUITY IS NEVER ZERO
                 const finalCost = costVal > 0 ? costVal : (priceVal > 0 ? priceVal * 0.5 : 0);
 
                 return {
@@ -1182,14 +1183,54 @@
                         <td class="p-2">${channelBadge}</td>
                         <td class="p-2 text-slate-500">${tx.date}</td>
                         <td class="p-2 text-right font-bold text-slate-800">RM ${Number(tx.grandTotal || 0).toFixed(2)}</td>
-                        <td class="p-2 text-center">
-                            <button onclick="reprintTransaction('${tx.orderNo}')" class="px-2.5 py-1 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[11px] rounded shadow-sm transition">
-                                <i class="fa-solid fa-print mr-1"></i> Cetak Resit
+                        <td class="p-2 text-center space-x-1">
+                            <button onclick="reprintTransaction('${tx.orderNo}')" class="px-2 py-1 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[11px] rounded shadow-sm transition" title="Cetak Resit">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                            <button onclick="deleteTransactionByOrderNo('${tx.orderNo}')" class="admin-only px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-[11px] rounded shadow-sm transition" title="Padam Rekod Duplikat">
+                                <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </td>
                     </tr>
                 `;
             });
+            applyUserRolePermissions();
+        }
+
+        // FUNGSI MEMADAM REKOD DUPLIKAT TERUS DARI GSHEET & ROLLBACK STOK
+        function deleteTransactionByOrderNo(orderNo) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('Akses Dihadkan: Hanya Admin dibenarkan memadam rekod jualan.');
+                return;
+            }
+
+            if (confirm(`Adakah anda pasti mahu memadam rekod transaksi #${orderNo}?\n\n- Rekod akan dipadam daripada Google Sheet.\n- Stok produk yang dijual akan dipulihkan semula.`)) {
+                const targetTx = salesHistory.find(t => t.orderNo === orderNo);
+
+                secureProxyRequest('deleteSingleSale', { orderNo: orderNo }, function(res) {
+                    // Pulihkan stok produk
+                    if (targetTx && Array.isArray(targetTx.items)) {
+                        targetTx.items.forEach(item => {
+                            const p = products.find(x => String(x.id) === String(item.id));
+                            if (p) {
+                                const before = p.stock;
+                                p.stock += Number(item.qty || 1);
+                                recordStockMovement(p, 'IN', item.qty, before, p.stock, `Batal/Padam Order ${orderNo}`);
+                            }
+                        });
+                        saveProducts();
+                    }
+
+                    // Padam dari memori tempatan
+                    salesHistory = salesHistory.filter(t => t.orderNo !== orderNo);
+                    renderStaffHistoryTable();
+                    updateFinancialReports();
+                    renderProducts();
+                    alert(`Rekod #${orderNo} berjaya dipadam & stok dipulihkan.`);
+                }, function(err) {
+                    alert('Gagal memadam dari Google Sheet: ' + err.message);
+                });
+            }
         }
 
         // RECEIPT SETTINGS MODAL LOGIC
@@ -1509,7 +1550,7 @@
             }
         }
 
-        // PROSES BAYARAN & SIMPAN KEKAL KE GSHEET
+        // PROSES BAYARAN DENGAN PERLINDUNGAN ANTI DOUBLE-SUBMIT
         function processCheckout() {
             if (cart.length === 0) {
                 alert('Troli anda masih kosong!');
@@ -1525,6 +1566,13 @@
                 alert('Jumlah tunai yang diterima tidak mencukupi!');
                 return;
             }
+
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            if (checkoutBtn.disabled) return; 
+
+            // Sekat butang sementara menunggu respon
+            checkoutBtn.disabled = true;
+            checkoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Memproses...';
 
             const custName = document.getElementById('custName').value.trim() || 'Pelanggan Walk-In';
             const custPhone = document.getElementById('custPhone').value.trim() || '-';
@@ -1552,6 +1600,8 @@
                 const p = products.find(x => String(x.id) === String(item.id));
                 if (!p || Number(p.stock) < Number(item.qty)) {
                     alert(`Stok tidak mencukupi untuk ${item.name}. Stok semasa: ${p ? p.stock : 0}.`);
+                    checkoutBtn.disabled = false;
+                    checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
                     return;
                 }
             }
@@ -1571,13 +1621,18 @@
                 printReceipt(transaction);
                 clearCart();
                 updateFinancialReports();
+                
+                checkoutBtn.disabled = false;
+                checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
                 alert(`Bayaran RM ${grandTotal.toFixed(2)} Berjaya! Rekod diselaraskan ke Google Sheet.`);
             }, function(err) {
+                checkoutBtn.disabled = false;
+                checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
                 alert('Ralat menyimpan ke Google Sheet: ' + err.message);
             });
         }
 
-        /* PRINT RECEIPT WITH PAYMENT METHOD DISPLAY */
+        /* PRINT RECEIPT */
         function printReceipt(transaction) {
             document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col print-mode-receipt";
 
@@ -2335,9 +2390,12 @@
                             <td class="p-2 text-slate-500">${tx.date}</td>
                             <td class="p-2 text-slate-700 font-semibold">${tx.paymentMethod}</td>
                             <td class="p-2 text-right font-bold text-slate-800">RM ${Number(tx.grandTotal || 0).toFixed(2)}</td>
-                            <td class="p-2 text-center no-print-report">
-                                <button onclick="reprintTransaction('${tx.orderNo}')" class="px-2 py-1 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10px] rounded shadow-sm transition">
-                                    <i class="fa-solid fa-print mr-1"></i> Cetak Resit
+                            <td class="p-2 text-center no-print-report space-x-1">
+                                <button onclick="reprintTransaction('${tx.orderNo}')" class="px-2 py-1 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10px] rounded shadow-sm transition" title="Cetak Resit">
+                                    <i class="fa-solid fa-print"></i>
+                                </button>
+                                <button onclick="deleteTransactionByOrderNo('${tx.orderNo}')" class="admin-only px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 font-bold text-[10px] rounded shadow-sm transition" title="Padam Rekod">
+                                    <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </td>
                         </tr>
@@ -2360,7 +2418,7 @@
                     if (!costPrice) {
                         const originalP = products.find(p => String(p.id) === String(i.id));
                         if (originalP) costPrice = Number(originalP.cost || 0);
-                        if (!costPrice) costPrice = Number(i.price || 0) * 0.5; // Fallback ke 50%
+                        if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
                     }
                     actualCogs += costPrice * Number(i.qty || 1);
                 });
