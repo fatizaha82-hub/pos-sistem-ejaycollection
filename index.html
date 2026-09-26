@@ -169,7 +169,7 @@
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3 mt-2 sm:mt-0 flex-wrap gap-y-2">
-            <!-- DIUBAH: BUTANG PENGGUNA TERUS MENJADI WARNA OREN -->
+            <!-- BUTANG PENGGUNA OREN -->
             <div class="text-xs px-3 py-1.5 rounded-full bg-orange-500 text-white font-bold border border-orange-600 shadow-sm flex items-center">
                 <i class="fa-solid fa-user-check mr-1.5 text-white"></i> <span id="activeUserBadge">Pengguna: -</span>
             </div>
@@ -608,7 +608,7 @@
             
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200 text-center md:text-left">
                 <div>
-                    <!-- DITAMBAH: NAMA SYARIKAT PADA CETAKAN ATAS SEKALi -->
+                    <!-- NAMA SYARIKAT PADA CETAKAN LAPORAN ATAS SEKALI -->
                     <h2 class="font-heading font-extrabold text-gold-600 text-xl tracking-wider uppercase mb-0.5">EMPIRE DAIE EJAY COLLECTION</h2>
                     <h3 class="font-heading font-bold text-slate-800 text-md uppercase" id="reportHeaderTitle">LAPORAN KEWANGAAN</h3>
                     <!-- KAWASAN TEMPOH LAPORAN CETAKAN -->
@@ -738,7 +738,7 @@
                 <!-- TAB 3: Penyata Untung Rugi -->
                 <div id="tabContentPnL" class="report-content hidden">
                     <div class="bg-greycair-50 p-6 rounded-lg border border-greycair-200 max-w-2xl mx-auto space-y-3 text-sm">
-                        <h4 class="font-heading text-center text-gold-600 font-bold border-b border-greycair-300 pb-2 uppercase" id="pnlTitleHeading">Penyata Untung Rugi</h4>
+                        <h4 class="font-heading text-center text-gold-600 font-bold border-b border-greycair-300 pb-2 uppercase" id="pnlTitleHeading">PENYATA UNTUNG RUGI</h4>
                         
                         <div class="flex justify-between py-1 border-b border-greycair-200">
                             <span class="text-slate-700 font-semibold">Jumlah Hasil / Jualan Kasar (Revenue)</span>
@@ -773,7 +773,7 @@
                 <!-- TAB 4: Kunci Kira-Kira -->
                 <div id="tabContentBalance" class="report-content hidden">
                     <div class="bg-greycair-50 p-6 rounded-lg border border-greycair-200 max-w-2xl mx-auto space-y-4 text-sm">
-                        <h4 class="font-heading text-center text-gold-600 font-bold border-b border-greycair-300 pb-2 uppercase" id="balanceTitleHeading">Penyata Kunci Kira-Kira</h4>
+                        <h4 class="font-heading text-center text-gold-600 font-bold border-b border-greycair-300 pb-2 uppercase" id="balanceTitleHeading">PENYATA KUNCI KIRA-KIRA</h4>
                         
                         <div>
                             <h5 class="text-xs font-bold text-gold-700 uppercase tracking-wider mb-2">Aset Semasa</h5>
@@ -820,7 +820,7 @@
                 <!-- TAB 5: Penyata Aliran Tunai -->
                 <div id="tabContentCashflow" class="report-content hidden">
                     <div class="bg-greycair-50 p-6 rounded-lg border border-greycair-200 max-w-2xl mx-auto space-y-3 text-sm">
-                        <h4 class="font-heading text-center text-gold-600 font-bold border-b border-greycair-300 pb-2 uppercase" id="cashflowTitleHeading">Penyata Aliran Tunai</h4>
+                        <h4 class="font-heading text-center text-gold-600 font-bold border-b border-greycair-300 pb-2 uppercase" id="cashflowTitleHeading">PENYATA ALIRAN TUNAI</h4>
 
                         <div class="space-y-2">
                             <h5 class="text-xs font-bold text-slate-600 uppercase">Aliran Tunai Masuk Mengikut Saluran</h5>
@@ -2244,7 +2244,7 @@
                 const id = String(item.id || '');
                 if(!id || seen[id]) return;
                 seen[id] = true;
-                const p = products.find(x => String(x.id) === String(id));
+                const p = products.find(x => String(x.id) === id);
                 if(p) pushWooCommerceStock(p.id, p.stock);
             });
         }
