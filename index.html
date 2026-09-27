@@ -638,8 +638,16 @@
                     </div>
                 </div>
 
+                <!-- CARIAN PRODUK DINAMIK UNTUK JUALAN LUAR -->
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1">Pilih Produk:</label>
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Cari & Pilih Produk:</label>
+                    <div class="relative mb-1.5">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="extProductSearchInput" oninput="filterExternalSaleProducts()" placeholder="Taip nama produk / SKU..." class="w-full pl-8 pr-8 py-1.5 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-emerald-500">
+                        <button type="button" onclick="clearExtProductSearch()" id="extClearSearchBtn" class="hidden absolute right-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-emerald-600">
+                            <i class="fa-solid fa-circle-xmark text-xs"></i>
+                        </button>
+                    </div>
                     <select id="extProductId" onchange="autoPopulateExtPrice()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-emerald-500">
                         <!-- Populated dynamically -->
                     </select>
@@ -2113,9 +2121,9 @@
             }
         }
 
-        // FUNGSI JUALAN LUAR (KINI BOLEH DIAKSES SAMA ADA ADMIN ATAU STAF)
+        // FUNGSI JUALAN LUAR (DENGAN CARIAN PRODUK & DIBUKA UNTUK STAF/ADMIN)
         function openExternalSaleModal() {
-            populateExternalSaleModalDropdowns();
+            clearExtProductSearch();
             document.getElementById('externalSaleModal').classList.remove('hidden');
         }
         function closeExternalSaleModal() {
@@ -2136,24 +2144,64 @@
             }
         }
 
-        function populateExternalSaleModalDropdowns() {
+        function populateExternalSaleModalDropdowns(filteredList = null) {
             const pSelect = document.getElementById('extProductId');
             pSelect.innerHTML = '';
-            products.forEach(p => {
-                pSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-            });
+
+            const listToRender = filteredList || products;
+
+            if (listToRender.length === 0) {
+                pSelect.innerHTML = '<option value="">-- Tiada Produk Ditemui --</option>';
+            } else {
+                listToRender.forEach(p => {
+                    pSelect.innerHTML += `<option value="${p.id}">${p.name} (${p.sku || 'EC-000'})</option>`;
+                });
+            }
+
             autoPopulateExtPrice();
+        }
+
+        function filterExternalSaleProducts() {
+            const query = document.getElementById('extProductSearchInput').value.toLowerCase().trim();
+            const clearBtn = document.getElementById('extClearSearchBtn');
+
+            if (query.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            const filtered = products.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                String(p.sku || '').toLowerCase().includes(query)
+            );
+
+            populateExternalSaleModalDropdowns(filtered);
+        }
+
+        function clearExtProductSearch() {
+            const searchInput = document.getElementById('extProductSearchInput');
+            if (searchInput) searchInput.value = '';
+            const clearBtn = document.getElementById('extClearSearchBtn');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            populateExternalSaleModalDropdowns(products);
         }
 
         function autoPopulateExtPrice() {
             const pid = parseInt(document.getElementById('extProductId').value);
             const product = products.find(p => p.id === pid);
-            if(!product) return;
-
+            
             const sizeSel = document.getElementById('extSize');
-            sizeSel.innerHTML = (product.sizes || ['Free Size']).map(s => `<option value="${s}">${s}</option>`).join('');
-
             const colorSel = document.getElementById('extColor');
+
+            if(!product) {
+                sizeSel.innerHTML = '<option value="Free Size">Free Size</option>';
+                colorSel.innerHTML = '<option value="Piawai">Piawai</option>';
+                document.getElementById('extTotal').value = '0.00';
+                return;
+            }
+
+            sizeSel.innerHTML = (product.sizes || ['Free Size']).map(s => `<option value="${s}">${s}</option>`).join('');
             colorSel.innerHTML = (product.colors || ['Piawai']).map(c => `<option value="${c}">${c}</option>`).join('');
 
             calculateExtTotal();
