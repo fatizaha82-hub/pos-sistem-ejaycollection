@@ -165,7 +165,12 @@
                 </div>
                 <div>
                     <label class="block text-xs text-slate-700 mb-1 font-semibold">ID / Kata Laluan:</label>
-                    <input type="password" id="loginPassword" placeholder="Masukkan password" required class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                    <div class="relative">
+                        <input type="password" id="loginPassword" placeholder="Masukkan password" required class="w-full pl-3 pr-10 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-gold-600 focus:outline-none">
+                            <i class="fa-solid fa-eye" id="togglePassIcon"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full py-2.5 bg-gradient-to-r from-gold-600 to-gold-500 hover:from-gold-500 hover:to-gold-400 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-md transition">
                     Log Masuk POS
@@ -810,7 +815,7 @@
                                     <th class="p-2">Pelanggan</th>
                                     <th class="p-2">Staf</th>
                                     <th class="p-2">Saluran</th>
-                                    <th class="p-2">Masa / Tarikh</th>
+                                    <th class="p-2">Tarikh & Masa</th>
                                     <th class="p-2">Kaedah</th>
                                     <th class="p-2 text-right">Jumlah</th>
                                     <th class="p-2 text-center no-print-report">Tindakan</th>
@@ -1239,6 +1244,21 @@
             initInactivityTracker();
         };
 
+        // FUNGSI TUKAR TAMPILAN PASSWORD (IKON MATA)
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('loginPassword');
+            const passIcon = document.getElementById('togglePassIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                passIcon.classList.remove('fa-eye');
+                passIcon.classList.add('fa-eye-slash');
+            } else {
+                passInput.type = 'password';
+                passIcon.classList.remove('fa-eye-slash');
+                passIcon.classList.add('fa-eye');
+            }
+        }
+
         // ================= FUNGSI DAILY CLOSING (TUTUP KAUNTER) =================
         function openClosingModal() {
             const todayStr = new Date().toISOString().slice(0, 10);
@@ -1450,18 +1470,18 @@
             }
         }
 
-        // AKES LOGIN KETAT & BEBAS DARIPADA PERTUKARAN ID
+        // AKES LOGIN KETAT & BEBAS DARIPADA PERTUKARAN ID (CASE-INSENSITIVE USERNAME)
         function handleLogin(e) {
             e.preventDefault();
-            const usernameInput = document.getElementById('loginUsername').value.trim();
+            const usernameInput = document.getElementById('loginUsername').value.trim().toLowerCase();
             const passInput = document.getElementById('loginPassword').value.trim();
 
-            if ((usernameInput.toLowerCase() === adminAccount.name.toLowerCase() || usernameInput.toLowerCase() === 'admin') && passInput === adminAccount.pass) {
+            if ((usernameInput === adminAccount.name.toLowerCase() || usernameInput === 'admin') && passInput === adminAccount.pass) {
                 currentUser = { name: adminAccount.name, role: 'admin' };
             } 
             else {
                 const matchedStaff = staffList.find(s => 
-                    (s.name.toLowerCase() === usernameInput.toLowerCase() || s.pass === usernameInput) && s.pass === passInput
+                    (s.name.toLowerCase() === usernameInput || s.pass.toLowerCase() === usernameInput) && s.pass === passInput
                 );
 
                 if (matchedStaff) {
