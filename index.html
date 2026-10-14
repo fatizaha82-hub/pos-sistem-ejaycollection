@@ -1128,7 +1128,7 @@
                             <h5 class="text-xs font-bold text-gold-700 uppercase tracking-wider mb-2">Aset Semasa</h5>
                             <div class="space-y-1.5 pl-3 border-l-2 border-gold-500">
                                 <div class="flex justify-between text-xs text-slate-700">
-                                    <span>Tunai & Baki Bank (Bersih Terumpul)</span>
+                                    <span>Tunai & Baki Bank (Baki Terkumpul Sehingga Bulan Dipilih)</span>
                                     <span id="bsCashBank" class="font-bold">RM 0.00</span>
                                 </div>
                                 <div class="flex justify-between text-xs text-slate-700">
@@ -1154,7 +1154,7 @@
                                     <span id="bsEquityCapital" class="font-bold">RM 0.00</span>
                                 </div>
                                 <div class="flex justify-between text-xs text-slate-700">
-                                    <span>Untung Terkumpul (Bulan Ini)</span>
+                                    <span>Untung Terkumpul (Baki Sebenar Terkumpul)</span>
                                     <span id="bsRetainedEarnings" class="text-emerald-600">RM 0.00</span>
                                 </div>
                             </div>
@@ -1533,6 +1533,52 @@
             notes: ''
         };
 
+        // HELPER TARIKH UNTUK FORMAT SERAGAM YYYY-MM
+        function parseYearMonth(dateInput) {
+            if (!dateInput) return '';
+            if (dateInput instanceof Date) {
+                const yyyy = dateInput.getFullYear();
+                const mm = String(dateInput.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}-${mm}`;
+            }
+            const str = String(dateInput).trim();
+            if (str.includes('T')) return str.slice(0, 7);
+            
+            // Format YYYY-MM-DD
+            if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 7);
+            
+            // Try parse date
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                return `${yyyy}-${mm}`;
+            }
+            return '';
+        }
+
+        function parseYYYYMMDD(dateInput) {
+            if (!dateInput) return '';
+            if (dateInput instanceof Date) {
+                const yyyy = dateInput.getFullYear();
+                const mm = String(dateInput.getMonth() + 1).padStart(2, '0');
+                const dd = String(dateInput.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+            const str = String(dateInput).trim();
+            if (str.includes('T')) return str.slice(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 10);
+            
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            }
+            return '';
+        }
+
         window.onload = function() {
             normalizeProducts();
             checkActiveSession();
@@ -1546,9 +1592,9 @@
             populateExternalSaleModalDropdowns();
             fetchSettingsFromGSheet();     
             fetchSalesHistoryFromGSheet(); 
+            fetchExpenseHistoryFromGSheet();
             initInactivityTracker();
 
-            // Set default tarikh borang jualan luar & belanja
             const todayStr = new Date().toISOString().slice(0, 10);
             if(document.getElementById('extSingleDate')) document.getElementById('extSingleDate').value = todayStr;
             if(document.getElementById('lumpsumDate')) document.getElementById('lumpsumDate').value = todayStr;
@@ -1686,8 +1732,7 @@
             let totalSales = 0;
 
             salesHistory.forEach(tx => {
-                const txDateObj = new Date(tx.isoDate || tx.date);
-                const txDateStr = txDateObj.toISOString().slice(0, 10);
+                const txDateStr = parseYYYYMMDD(tx.isoDate || tx.date);
 
                 if (txDateStr === targetDate) {
                     txCount++;
@@ -1828,7 +1873,7 @@
                     cost: finalCost,
                     stock: Math.max(0, Number(p.stock ?? 0)),
                     minStock: Number(p.minStock ?? 5),
-                    sizes: p.sizes && p.sizes.length ? p.sizes : ['Free Size'],
+                    sizes: p.sizes && p.sizes.length ? p.sizes : (p.category?.toLowerCase().includes('perfume') ? ['30ml', '50ml', '100ml'] : ['Free Size']),
                     colors: p.colors && p.colors.length ? p.colors : ['Piawai']
                 };
             });
@@ -1952,11 +1997,11 @@
             tbody.innerHTML = '';
 
             const filtered = salesHistory.filter(tx => {
-                const txDate = new Date(tx.isoDate || tx.date);
+                const txDateStr = parseYYYYMMDD(tx.isoDate || tx.date);
                 
                 let matchDate = true;
                 if(dateVal) {
-                    matchDate = txDate.toISOString().slice(0,10) === dateVal;
+                    matchDate = txDateStr === dateVal;
                 }
 
                 let matchSearch = true;
@@ -2885,6 +2930,18 @@
             });
         }
 
+        function fetchExpenseHistoryFromGSheet() {
+            secureProxyRequest('getExpenseHistory', {}, function(result) {
+                if (result.expenseHistory && Array.isArray(result.expenseHistory)) {
+                    expenseRecords = result.expenseHistory;
+                    localStorage.setItem('ec_expense_records', JSON.stringify(expenseRecords));
+                    updateFinancialReports();
+                }
+            }, function(err) {
+                console.warn('Gagal memuat turun sejarah perbelanjaan dari Google Sheet:', err.message);
+            });
+        }
+
         function downloadBulkTemplateCSV() {
             let csvContent = "\uFEFF";
             csvContent += "OrderNo,Channel,CustomerName,CustomerPhone,ProductName,Size,Color,Qty,TotalSales\n";
@@ -3349,6 +3406,7 @@
                 return;
             }
             fetchSalesHistoryFromGSheet();
+            fetchExpenseHistoryFromGSheet();
             document.getElementById('reportsModal').classList.remove('hidden');
         }
         function closeReportsModal() { document.getElementById('reportsModal').classList.add('hidden'); }
@@ -3390,7 +3448,7 @@
         let currentFilteredProductStats = {};
         let currentFilteredTransactions = [];
 
-        // FUNGSI UPDATE FINANCIAL REPORTS (INFLOW & OUTFLOW EXPENSES INTEGRATION)
+        // FUNGSI UPDATE FINANCIAL REPORTS (LOGIK PERAKANAN SELARAS 100%)
         function updateFinancialReports() {
             const startDate = document.getElementById('summaryStartDateFilter').value;
             const endDate = document.getElementById('summaryEndDateFilter').value;
@@ -3453,22 +3511,20 @@
             // 1. LAPORAN PRODUK (TAB 2)
             const filteredSales = salesHistory.filter(tx => {
                 if(!selectedMonth) return true;
-                const txDate = new Date(tx.isoDate || tx.date);
-                const yearMonth = txDate.toISOString().slice(0,7);
+                const yearMonth = parseYearMonth(tx.isoDate || tx.date);
                 return yearMonth === selectedMonth;
             });
 
             // 2. LAPORAN TRANSAKSI SUMMARY (TAB 1)
             const summaryFilteredSales = salesHistory.filter(tx => {
-                const txDate = new Date(tx.isoDate || tx.date);
-                const txDateStr = txDate.toISOString().slice(0,10);
+                const txDateStr = parseYYYYMMDD(tx.isoDate || tx.date);
 
                 if (startDate && endDate) {
                     return txDateStr >= startDate && txDateStr <= endDate;
                 } else if (startDate) {
                     return txDateStr >= startDate;
                 } else if (summaryMonth) {
-                    const yearMonth = txDate.toISOString().slice(0,7);
+                    const yearMonth = parseYearMonth(tx.isoDate || tx.date);
                     return yearMonth === summaryMonth;
                 }
                 return true;
@@ -3595,21 +3651,19 @@
             document.getElementById('reportNetSalesHeader').innerText = `RM ${netSales.toFixed(2)}`;
             document.getElementById('reportTotalOrders').innerText = totalOrders;
 
-            // KIRA PERBELANJAAN / TUNAI KELUAR MENGIKUT BULAN
-            const filteredExpenses = expenseRecords.filter(exp => {
-                const targetMonth = activeReportTab === 'pnl' ? pnlMonth : (activeReportTab === 'cashflow' ? cashflowMonth : '');
-                if (!targetMonth) return true;
-                const expDate = new Date(exp.isoDate || exp.date);
-                return expDate.toISOString().slice(0, 7) === targetMonth;
+            // KIRA PERBELANJAAN / TUNAI KELUAR MENGIKUT BULAN UNTUK P&L
+            const pnlFilteredExpenses = expenseRecords.filter(exp => {
+                if (!pnlMonth) return true;
+                const expMonth = parseYearMonth(exp.isoDate || exp.date);
+                return expMonth === pnlMonth;
             });
-
-            let totalExpensesVal = filteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let pnlExpensesVal = pnlFilteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
 
             // KIRA UNTUNG RUGI (P&L)
             const pnlSales = salesHistory.filter(tx => {
                 if(!pnlMonth) return true;
-                const txDate = new Date(tx.isoDate || tx.date);
-                return txDate.toISOString().slice(0,7) === pnlMonth;
+                const txMonth = parseYearMonth(tx.isoDate || tx.date);
+                return txMonth === pnlMonth;
             });
 
             let pnlTotalSales = 0;
@@ -3633,26 +3687,35 @@
 
             const pnlGrossSales = pnlTotalSales + pnlTotalDiscounts;
             const pnlGrossProfit = pnlTotalSales - pnlCogsVal;
-            const pnlNetProfitVal = pnlGrossProfit - totalExpensesVal;
+            const pnlNetProfitVal = pnlGrossProfit - pnlExpensesVal;
 
             document.getElementById('pnlRevenue').innerText = `RM ${pnlGrossSales.toFixed(2)}`;
             document.getElementById('pnlDiscounts').innerText = `(RM ${pnlTotalDiscounts.toFixed(2)})`;
             document.getElementById('pnlNetSales').innerText = `RM ${pnlTotalSales.toFixed(2)}`;
             document.getElementById('pnlCogs').innerText = `(RM ${pnlCogsVal.toFixed(2)})`;
             document.getElementById('pnlGrossProfit').innerText = `RM ${pnlGrossProfit.toFixed(2)}`;
-            document.getElementById('pnlExpenses').innerText = `(RM ${totalExpensesVal.toFixed(2)})`;
+            document.getElementById('pnlExpenses').innerText = `(RM ${pnlExpensesVal.toFixed(2)})`;
             document.getElementById('pnlNetProfit').innerText = `RM ${pnlNetProfitVal.toFixed(2)}`;
 
-            // KIRA KUNCI KIRA-KIRA
-            const balanceSales = salesHistory.filter(tx => {
+            // KIRA KUNCI KIRA-KIRA (SEHINGGA AKHIR BULAN DIPILIH - AS AT DATE)
+            // Kunci kira-kira adalah penyata TERKUMPUL (Cumulative as-at-date)
+            const balanceSalesList = salesHistory.filter(tx => {
                 if(!balanceMonth) return true;
-                const txDate = new Date(tx.isoDate || tx.date);
-                return txDate.toISOString().slice(0,7) === balanceMonth;
+                const txMonth = parseYearMonth(tx.isoDate || tx.date);
+                return txMonth <= balanceMonth;
             });
 
-            let balanceTotalSales = balanceSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
-            let balanceCogsVal = 0;
-            balanceSales.forEach(tx => {
+            const balanceExpenseList = expenseRecords.filter(exp => {
+                if(!balanceMonth) return true;
+                const expMonth = parseYearMonth(exp.isoDate || exp.date);
+                return expMonth <= balanceMonth;
+            });
+
+            let accumSales = balanceSalesList.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
+            let accumExpenses = balanceExpenseList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let accumCogs = 0;
+
+            balanceSalesList.forEach(tx => {
                 (tx.items || []).forEach(i => {
                     let costPrice = Number(i.cost || 0);
                     if (!costPrice) {
@@ -3660,10 +3723,11 @@
                         if (originalP) costPrice = Number(originalP.cost || 0);
                         if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
                     }
-                    balanceCogsVal += costPrice * Number(i.qty || 1);
+                    accumCogs += costPrice * Number(i.qty || 1);
                 });
             });
-            let balanceGrossProfit = balanceTotalSales - balanceCogsVal;
+
+            let accumNetProfit = (accumSales - accumCogs) - accumExpenses;
 
             let historicalInventoryValue = 0;
 
@@ -3702,20 +3766,27 @@
                 });
             }
 
-            const totalAssets = (balanceTotalSales - totalExpensesVal) + historicalInventoryValue;
+            const accumCashBank = accumSales - accumExpenses;
+            const totalAssets = accumCashBank + historicalInventoryValue;
 
-            document.getElementById('bsCashBank').innerText = `RM ${(balanceTotalSales - totalExpensesVal).toFixed(2)}`;
+            document.getElementById('bsCashBank').innerText = `RM ${accumCashBank.toFixed(2)}`;
             document.getElementById('bsInventory').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
             document.getElementById('bsTotalAssets').innerText = `RM ${totalAssets.toFixed(2)}`;
             document.getElementById('bsEquityCapital').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
-            document.getElementById('bsRetainedEarnings').innerText = `RM ${(balanceGrossProfit - totalExpensesVal).toFixed(2)}`;
-            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${(historicalInventoryValue + (balanceGrossProfit - totalExpensesVal)).toFixed(2)}`;
+            document.getElementById('bsRetainedEarnings').innerText = `RM ${accumNetProfit.toFixed(2)}`;
+            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${(historicalInventoryValue + accumNetProfit).toFixed(2)}`;
 
-            // KIRA ALIRAN TUNAI MASUK & KELUAR
+            // KIRA ALIRAN TUNAI (INFLOW & OUTFLOW BULAN DIPILIH)
             const cashflowSalesList = salesHistory.filter(tx => {
                 if(!cashflowMonth) return true;
-                const txDate = new Date(tx.isoDate || tx.date);
-                return txDate.toISOString().slice(0,7) === cashflowMonth;
+                const txMonth = parseYearMonth(tx.isoDate || tx.date);
+                return txMonth === cashflowMonth;
+            });
+
+            const cashflowExpensesList = expenseRecords.filter(exp => {
+                if(!cashflowMonth) return true;
+                const expMonth = parseYearMonth(exp.isoDate || exp.date);
+                return expMonth === cashflowMonth;
             });
 
             let posSales = 0, eventSales = 0, shopeeSales = 0, tiktokSales = 0, webSales = 0, whatsappSales = 0, totalInflow = 0;
@@ -3740,15 +3811,17 @@
             document.getElementById('cfWhatsappSales').innerText = `RM ${whatsappSales.toFixed(2)}`;
             document.getElementById('cfTotalInflow').innerText = `RM ${totalInflow.toFixed(2)}`;
 
+            let cfTotalOutflowVal = cashflowExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
             // RENDER BREAKDOWN PERBELANJAAN (OUTFLOW)
             const cfExpenseBreakdown = document.getElementById('cfExpenseBreakdown');
             if (cfExpenseBreakdown) {
                 cfExpenseBreakdown.innerHTML = '';
-                if (filteredExpenses.length === 0) {
+                if (cashflowExpensesList.length === 0) {
                     cfExpenseBreakdown.innerHTML = '<div class="text-slate-400 text-[11px]">- Tiada rekod perbelanjaan bagi tempoh ini.</div>';
                 } else {
                     const expenseCatMap = {};
-                    filteredExpenses.forEach(exp => {
+                    cashflowExpensesList.forEach(exp => {
                         expenseCatMap[exp.category] = (expenseCatMap[exp.category] || 0) + Number(exp.amount || 0);
                     });
 
@@ -3763,8 +3836,8 @@
                 }
             }
 
-            document.getElementById('cfTotalOutflow').innerText = `(RM ${totalExpensesVal.toFixed(2)})`;
-            document.getElementById('cfNetCashflow').innerText = `RM ${(totalInflow - totalExpensesVal).toFixed(2)}`;
+            document.getElementById('cfTotalOutflow').innerText = `(RM ${cfTotalOutflowVal.toFixed(2)})`;
+            document.getElementById('cfNetCashflow').innerText = `RM ${(totalInflow - cfTotalOutflowVal).toFixed(2)}`;
         }
 
         function exportTransactionsCSV() {
