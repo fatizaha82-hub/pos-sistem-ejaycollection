@@ -1147,10 +1147,10 @@
                             <div class="space-y-1.5 pl-3 border-l-2 border-slate-400">
                                 <div class="flex justify-between text-xs text-slate-700">
                                     <span>Liabiliti Semasa (Pemiutang)</span>
-                                    <span>RM 0.00</span>
+                                    <span id="bsCurrentLiabilities" class="font-bold">RM 0.00</span>
                                 </div>
                                 <div class="flex justify-between text-xs text-slate-700">
-                                    <span>Ekuiti Pemilik / Modal (Nilai Kos Stok Bersejarah)</span>
+                                    <span>Ekuiti Pemilik / Modal (Baki Modal)</span>
                                     <span id="bsEquityCapital" class="font-bold">RM 0.00</span>
                                 </div>
                                 <div class="flex justify-between text-xs text-slate-700">
@@ -1161,6 +1161,9 @@
                             <div class="flex justify-between font-bold text-slate-800 mt-2 pt-2 border-t border-greycair-300">
                                 <span>JUMLAH LIABILITI & EKUITI</span>
                                 <span id="bsTotalLiabilitiesEquity" class="text-gold-600">RM 0.00</span>
+                            </div>
+                            <div id="bsBalanceStatus" class="mt-3 p-2 rounded text-center text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                ✓ KUNCI KIRA-KIRA SEIMBANG
                             </div>
                         </div>
                     </div>
@@ -3685,7 +3688,12 @@
 
             let pnlNetSales = pnlGrossSales - pnlDiscounts;
             let pnlGrossProfit = pnlNetSales - pnlCogs;
-            let pnlExpensesTotal = pnlExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            // Restok inventori ialah pertukaran aset (Tunai -> Inventori), BUKAN belanja operasi P&L.
+            const pnlOperatingExpensesList = pnlExpensesList.filter(exp => {
+                const cat = String(exp.category || '').toLowerCase();
+                return !(cat.includes('restok') || cat.includes('inventori') || cat.includes('stok'));
+            });
+            let pnlExpensesTotal = pnlOperatingExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
             let pnlNetProfit = pnlGrossProfit - pnlExpensesTotal;
 
             // Render ke UI P&L
@@ -3764,6 +3772,12 @@
 
             // ==========================================
             // 3. KUNCI KIRA-KIRA (BALANCE SHEET) AS AT END OF MONTH
+            // LOGIK DIBETULKAN:
+            // - Tunai = semua jualan diterima - semua tunai keluar
+            // - Inventori = stok akhir x kos
+            // - Untung terkumpul = untung bersih KUMULATIF hingga tarikh BS
+            // - Restok TIDAK dianggap belanja operasi dalam P&L
+            // - Modal ialah baki ekuiti selepas mengambil kira untung terkumpul
             // ==========================================
             const bsSales = salesHistory.filter(tx => {
                 if(!balanceMonth) return true;
@@ -3775,49 +3789,118 @@
                 return parseYearMonth(exp.isoDate || exp.date) <= balanceMonth;
             });
 
+            // Semua rekod "Tunai Keluar" memang mengurangkan tunai,
+            // termasuk restok, kerana wang benar-benar keluar.
             let bsInflowTotal = bsSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
             let bsOutflowTotal = bsExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
             let bsCashBank = bsInflowTotal - bsOutflowTotal;
 
-            // Kirakan Nilai Stok Akhir Bersejarah
+            // Nilai stok akhir bersejarah pada kos.
             let historicalInventoryValue = 0;
             if (!balanceMonth) {
-                historicalInventoryValue = products.reduce((sum, p) => sum + (Number(p.stock || 0) * (Number(p.cost) || Number(p.price) * 0.5)), 0);
+                historicalInventoryValue = products.reduce((sum, p) => {
+                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : Number(p.price || 0) * 0.5;
+                    return sum + (Number(p.stock || 0) * costPrice);
+                }, 0);
             } else {
                 const [bYear, bMonth] = balanceMonth.split('-').map(Number);
                 const endOfSelectedMonth = new Date(bYear, bMonth, 0, 23, 59, 59, 999);
 
                 products.forEach(p => {
-                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : (Number(p.price) * 0.5);
+                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : Number(p.price || 0) * 0.5;
                     let productHistoricalStock = Number(p.stock || 0);
 
                     stockMovements.forEach(m => {
-                        if (String(m.productId) === String(p.id) || String(m.sku).toLowerCase() === String(p.sku).toLowerCase()) {
+                        const sameProduct =
+                            String(m.productId) === String(p.id) ||
+                            (String(m.sku || '').toLowerCase() === String(p.sku || '').toLowerCase());
+
+                        if (sameProduct) {
                             const mDate = new Date(m.date);
-                            if (mDate > endOfSelectedMonth) {
+                            if (!isNaN(mDate.getTime()) && mDate > endOfSelectedMonth) {
                                 const qty = Number(m.qty || 0);
                                 if (m.type === 'IN') productHistoricalStock -= qty;
                                 else if (m.type === 'OUT') productHistoricalStock += qty;
-                                else if (m.type === 'ADJUST') productHistoricalStock -= (Number(m.after) - Number(m.before));
+                                else if (m.type === 'ADJUST') {
+                                    productHistoricalStock -= (Number(m.after || 0) - Number(m.before || 0));
+                                }
                             }
                         }
                     });
-                    historicalInventoryValue += (Math.max(0, productHistoricalStock) * costPrice);
+
+                    historicalInventoryValue += Math.max(0, productHistoricalStock) * costPrice;
                 });
             }
 
-            // Aset & Ekuiti
-            let totalAssets = bsCashBank + historicalInventoryValue;
-            let bsRetainedEarnings = pnlNetProfit; 
-            let bsEquityCapital = totalAssets - bsRetainedEarnings;
+            // Untung terkumpul MESTI dikira secara kumulatif hingga bulan Kunci Kira-Kira,
+            // bukan menggunakan pnlNetProfit daripada filter P&L yang berasingan.
+            let bsGrossSales = 0;
+            let bsDiscounts = 0;
+            let bsCogs = 0;
+
+            bsSales.forEach(tx => {
+                bsGrossSales += Number(tx.subtotal || tx.grandTotal || 0);
+                bsDiscounts += Number(tx.discount || 0);
+
+                (tx.items || []).forEach(i => {
+                    let costPrice = Number(i.cost || 0);
+                    if (!costPrice) {
+                        const originalP = products.find(p => String(p.id) === String(i.id));
+                        if (originalP) costPrice = Number(originalP.cost || 0);
+                        if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
+                    }
+                    bsCogs += costPrice * Number(i.qty || 1);
+                });
+            });
+
+            // Restok stok tidak masuk Operating Expense kerana ia menjadi aset inventori.
+            const bsOperatingExpenses = bsExpensesList.filter(exp => {
+                const cat = String(exp.category || '').toLowerCase();
+                return !(cat.includes('restok') || cat.includes('inventori') || cat.includes('stok'));
+            });
+
+            const bsOperatingExpensesTotal = bsOperatingExpenses.reduce(
+                (sum, exp) => sum + Number(exp.amount || 0), 0
+            );
+
+            const bsNetSales = bsGrossSales - bsDiscounts;
+            const bsGrossProfit = bsNetSales - bsCogs;
+            const bsRetainedEarnings = bsGrossProfit - bsOperatingExpensesTotal;
+
+            // Buat masa ini sistem belum mempunyai ledger hutang/pemiutang berasingan.
+            // Oleh itu liabiliti kekal 0 sehingga modul liabiliti ditambah.
+            const bsCurrentLiabilities = 0;
+
+            const totalAssets = bsCashBank + historicalInventoryValue;
+
+            // Modal/ekuiti pemilik ialah baki modal yang diperlukan oleh rekod sejarah semasa.
+            // Ini TIDAK lagi disamakan dengan nilai stok.
+            const bsEquityCapital = totalAssets - bsCurrentLiabilities - bsRetainedEarnings;
+
+            const totalLiabilitiesEquity =
+                bsCurrentLiabilities + bsEquityCapital + bsRetainedEarnings;
+
+            const balanceDifference = totalAssets - totalLiabilitiesEquity;
 
             // Render ke UI Kunci Kira-Kira
             document.getElementById('bsCashBank').innerText = `RM ${bsCashBank.toFixed(2)}`;
             document.getElementById('bsInventory').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
             document.getElementById('bsTotalAssets').innerText = `RM ${totalAssets.toFixed(2)}`;
+            document.getElementById('bsCurrentLiabilities').innerText = `RM ${bsCurrentLiabilities.toFixed(2)}`;
             document.getElementById('bsEquityCapital').innerText = `RM ${bsEquityCapital.toFixed(2)}`;
             document.getElementById('bsRetainedEarnings').innerText = `RM ${bsRetainedEarnings.toFixed(2)}`;
-            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${(bsEquityCapital + bsRetainedEarnings).toFixed(2)}`;
+            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${totalLiabilitiesEquity.toFixed(2)}`;
+
+            const bsStatus = document.getElementById('bsBalanceStatus');
+            if (bsStatus) {
+                if (Math.abs(balanceDifference) < 0.01) {
+                    bsStatus.className = 'mt-3 p-2 rounded text-center text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                    bsStatus.innerText = '✓ KUNCI KIRA-KIRA SEIMBANG';
+                } else {
+                    bsStatus.className = 'mt-3 p-2 rounded text-center text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200';
+                    bsStatus.innerText = `⚠ TIDAK SEIMBANG: RM ${Math.abs(balanceDifference).toFixed(2)}`;
+                }
+            }
         }
 
         function exportTransactionsCSV() {
