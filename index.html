@@ -3651,28 +3651,26 @@
             document.getElementById('reportNetSalesHeader').innerText = `RM ${netSales.toFixed(2)}`;
             document.getElementById('reportTotalOrders').innerText = totalOrders;
 
-            // KIRA PERBELANJAAN / TUNAI KELUAR MENGIKUT BULAN UNTUK P&L
-            const pnlFilteredExpenses = expenseRecords.filter(exp => {
-                if (!pnlMonth) return true;
-                const expMonth = parseYearMonth(exp.isoDate || exp.date);
-                return expMonth === pnlMonth;
-            });
-            let pnlExpensesVal = pnlFilteredExpenses.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-
-            // KIRA UNTUNG RUGI (P&L)
+            // ==========================================
+            // 1. KIRAAN UNTUNG RUGI (P&L) FOR SELECTED MONTH
+            // ==========================================
             const pnlSales = salesHistory.filter(tx => {
                 if(!pnlMonth) return true;
-                const txMonth = parseYearMonth(tx.isoDate || tx.date);
-                return txMonth === pnlMonth;
+                return parseYearMonth(tx.isoDate || tx.date) === pnlMonth;
             });
 
-            let pnlTotalSales = 0;
-            let pnlTotalDiscounts = 0;
-            let pnlCogsVal = 0;
+            const pnlExpensesList = expenseRecords.filter(exp => {
+                if(!pnlMonth) return true;
+                return parseYearMonth(exp.isoDate || exp.date) === pnlMonth;
+            });
+
+            let pnlGrossSales = 0;
+            let pnlDiscounts = 0;
+            let pnlCogs = 0;
 
             pnlSales.forEach(tx => {
-                pnlTotalSales += Number(tx.grandTotal || 0);
-                pnlTotalDiscounts += Number(tx.discount || 0);
+                pnlGrossSales += Number(tx.subtotal || tx.grandTotal || 0);
+                pnlDiscounts += Number(tx.discount || 0);
 
                 (tx.items || []).forEach(i => {
                     let costPrice = Number(i.cost || 0);
@@ -3681,119 +3679,42 @@
                         if (originalP) costPrice = Number(originalP.cost || 0);
                         if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
                     }
-                    pnlCogsVal += costPrice * Number(i.qty || 1);
+                    pnlCogs += costPrice * Number(i.qty || 1);
                 });
             });
 
-            const pnlGrossSales = pnlTotalSales + pnlTotalDiscounts;
-            const pnlGrossProfit = pnlTotalSales - pnlCogsVal;
-            const pnlNetProfitVal = pnlGrossProfit - pnlExpensesVal;
+            let pnlNetSales = pnlGrossSales - pnlDiscounts;
+            let pnlGrossProfit = pnlNetSales - pnlCogs;
+            let pnlExpensesTotal = pnlExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let pnlNetProfit = pnlGrossProfit - pnlExpensesTotal;
 
+            // Render ke UI P&L
             document.getElementById('pnlRevenue').innerText = `RM ${pnlGrossSales.toFixed(2)}`;
-            document.getElementById('pnlDiscounts').innerText = `(RM ${pnlTotalDiscounts.toFixed(2)})`;
-            document.getElementById('pnlNetSales').innerText = `RM ${pnlTotalSales.toFixed(2)}`;
-            document.getElementById('pnlCogs').innerText = `(RM ${pnlCogsVal.toFixed(2)})`;
+            document.getElementById('pnlDiscounts').innerText = `(RM ${pnlDiscounts.toFixed(2)})`;
+            document.getElementById('pnlNetSales').innerText = `RM ${pnlNetSales.toFixed(2)}`;
+            document.getElementById('pnlCogs').innerText = `(RM ${pnlCogs.toFixed(2)})`;
             document.getElementById('pnlGrossProfit').innerText = `RM ${pnlGrossProfit.toFixed(2)}`;
-            document.getElementById('pnlExpenses').innerText = `(RM ${pnlExpensesVal.toFixed(2)})`;
-            document.getElementById('pnlNetProfit').innerText = `RM ${pnlNetProfitVal.toFixed(2)}`;
+            document.getElementById('pnlExpenses').innerText = `(RM ${pnlExpensesTotal.toFixed(2)})`;
+            document.getElementById('pnlNetProfit').innerText = `RM ${pnlNetProfit.toFixed(2)}`;
 
-            // KIRA KUNCI KIRA-KIRA (SEHINGGA AKHIR BULAN DIPILIH - AS AT DATE)
-            // Kunci kira-kira adalah penyata TERKUMPUL (Cumulative as-at-date)
-            const balanceSalesList = salesHistory.filter(tx => {
-                if(!balanceMonth) return true;
-                const txMonth = parseYearMonth(tx.isoDate || tx.date);
-                return txMonth <= balanceMonth;
-            });
-
-            const balanceExpenseList = expenseRecords.filter(exp => {
-                if(!balanceMonth) return true;
-                const expMonth = parseYearMonth(exp.isoDate || exp.date);
-                return expMonth <= balanceMonth;
-            });
-
-            let accumSales = balanceSalesList.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
-            let accumExpenses = balanceExpenseList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-            let accumCogs = 0;
-
-            balanceSalesList.forEach(tx => {
-                (tx.items || []).forEach(i => {
-                    let costPrice = Number(i.cost || 0);
-                    if (!costPrice) {
-                        const originalP = products.find(p => String(p.id) === String(i.id));
-                        if (originalP) costPrice = Number(originalP.cost || 0);
-                        if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
-                    }
-                    accumCogs += costPrice * Number(i.qty || 1);
-                });
-            });
-
-            let accumNetProfit = (accumSales - accumCogs) - accumExpenses;
-
-            let historicalInventoryValue = 0;
-
-            if (!balanceMonth) {
-                historicalInventoryValue = products.reduce((sum, p) => {
-                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : (Number(p.price) * 0.5);
-                    return sum + (Number(p.stock || 0) * costPrice);
-                }, 0);
-            } else {
-                const [bYear, bMonth] = balanceMonth.split('-').map(Number);
-                const endOfSelectedMonth = new Date(bYear, bMonth, 0, 23, 59, 59, 999);
-
-                products.forEach(p => {
-                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : (Number(p.price) * 0.5);
-                    let productHistoricalStock = Number(p.stock || 0);
-
-                    stockMovements.forEach(m => {
-                        if (String(m.productId) === String(p.id) || String(m.sku).toLowerCase() === String(p.sku).toLowerCase()) {
-                            const mDate = new Date(m.date);
-                            if (mDate > endOfSelectedMonth) {
-                                const qty = Number(m.qty || 0);
-                                if (m.type === 'IN') {
-                                    productHistoricalStock -= qty; 
-                                } else if (m.type === 'OUT') {
-                                    productHistoricalStock += qty; 
-                                } else if (m.type === 'ADJUST') {
-                                    const diff = Number(m.after) - Number(m.before);
-                                    productHistoricalStock -= diff;
-                                }
-                            }
-                        }
-                    });
-
-                    productHistoricalStock = Math.max(0, productHistoricalStock);
-                    historicalInventoryValue += (productHistoricalStock * costPrice);
-                });
-            }
-
-            const accumCashBank = accumSales - accumExpenses;
-            const totalAssets = accumCashBank + historicalInventoryValue;
-
-            document.getElementById('bsCashBank').innerText = `RM ${accumCashBank.toFixed(2)}`;
-            document.getElementById('bsInventory').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
-            document.getElementById('bsTotalAssets').innerText = `RM ${totalAssets.toFixed(2)}`;
-            document.getElementById('bsEquityCapital').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
-            document.getElementById('bsRetainedEarnings').innerText = `RM ${accumNetProfit.toFixed(2)}`;
-            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${(historicalInventoryValue + accumNetProfit).toFixed(2)}`;
-
-            // KIRA ALIRAN TUNAI (INFLOW & OUTFLOW BULAN DIPILIH)
-            const cashflowSalesList = salesHistory.filter(tx => {
+            // ==========================================
+            // 2. KIRAAN ALIRAN TUNAI (CASHFLOW) FOR SELECTED MONTH
+            // ==========================================
+            const cfSales = salesHistory.filter(tx => {
                 if(!cashflowMonth) return true;
-                const txMonth = parseYearMonth(tx.isoDate || tx.date);
-                return txMonth === cashflowMonth;
+                return parseYearMonth(tx.isoDate || tx.date) === cashflowMonth;
             });
 
-            const cashflowExpensesList = expenseRecords.filter(exp => {
+            const cfExpensesList = expenseRecords.filter(exp => {
                 if(!cashflowMonth) return true;
-                const expMonth = parseYearMonth(exp.isoDate || exp.date);
-                return expMonth === cashflowMonth;
+                return parseYearMonth(exp.isoDate || exp.date) === cashflowMonth;
             });
 
-            let posSales = 0, eventSales = 0, shopeeSales = 0, tiktokSales = 0, webSales = 0, whatsappSales = 0, totalInflow = 0;
+            let posSales = 0, eventSales = 0, shopeeSales = 0, tiktokSales = 0, webSales = 0, whatsappSales = 0, cfTotalInflow = 0;
 
-            cashflowSalesList.forEach(tx => {
+            cfSales.forEach(tx => {
                 const amt = Number(tx.grandTotal || 0);
-                totalInflow += amt;
+                cfTotalInflow += amt;
                 const channel = tx.channel || 'POS Butik';
                 if (channel.includes('Program') || channel.includes('Event')) eventSales += amt;
                 else if (channel.includes('Shopee')) shopeeSales += amt;
@@ -3803,25 +3724,27 @@
                 else posSales += amt;
             });
 
+            let cfTotalOutflow = cfExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let cfNetCashflow = cfTotalInflow - cfTotalOutflow;
+
+            // Render ke UI Cashflow
             document.getElementById('cfPosSales').innerText = `RM ${posSales.toFixed(2)}`;
             document.getElementById('cfEventSales').innerText = `RM ${eventSales.toFixed(2)}`;
             if(document.getElementById('cfShopeeSales')) document.getElementById('cfShopeeSales').innerText = `RM ${shopeeSales.toFixed(2)}`;
             document.getElementById('cfTiktokSales').innerText = `RM ${tiktokSales.toFixed(2)}`;
             document.getElementById('cfWebSales').innerText = `RM ${webSales.toFixed(2)}`;
             document.getElementById('cfWhatsappSales').innerText = `RM ${whatsappSales.toFixed(2)}`;
-            document.getElementById('cfTotalInflow').innerText = `RM ${totalInflow.toFixed(2)}`;
+            document.getElementById('cfTotalInflow').innerText = `RM ${cfTotalInflow.toFixed(2)}`;
 
-            let cfTotalOutflowVal = cashflowExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-
-            // RENDER BREAKDOWN PERBELANJAAN (OUTFLOW)
+            // Render breakdown expenses
             const cfExpenseBreakdown = document.getElementById('cfExpenseBreakdown');
             if (cfExpenseBreakdown) {
                 cfExpenseBreakdown.innerHTML = '';
-                if (cashflowExpensesList.length === 0) {
+                if (cfExpensesList.length === 0) {
                     cfExpenseBreakdown.innerHTML = '<div class="text-slate-400 text-[11px]">- Tiada rekod perbelanjaan bagi tempoh ini.</div>';
                 } else {
                     const expenseCatMap = {};
-                    cashflowExpensesList.forEach(exp => {
+                    cfExpensesList.forEach(exp => {
                         expenseCatMap[exp.category] = (expenseCatMap[exp.category] || 0) + Number(exp.amount || 0);
                     });
 
@@ -3836,8 +3759,65 @@
                 }
             }
 
-            document.getElementById('cfTotalOutflow').innerText = `(RM ${cfTotalOutflowVal.toFixed(2)})`;
-            document.getElementById('cfNetCashflow').innerText = `RM ${(totalInflow - cfTotalOutflowVal).toFixed(2)}`;
+            document.getElementById('cfTotalOutflow').innerText = `(RM ${cfTotalOutflow.toFixed(2)})`;
+            document.getElementById('cfNetCashflow').innerText = `RM ${cfNetCashflow.toFixed(2)}`;
+
+            // ==========================================
+            // 3. KUNCI KIRA-KIRA (BALANCE SHEET) AS AT END OF MONTH
+            // ==========================================
+            const bsSales = salesHistory.filter(tx => {
+                if(!balanceMonth) return true;
+                return parseYearMonth(tx.isoDate || tx.date) <= balanceMonth;
+            });
+
+            const bsExpensesList = expenseRecords.filter(exp => {
+                if(!balanceMonth) return true;
+                return parseYearMonth(exp.isoDate || exp.date) <= balanceMonth;
+            });
+
+            let bsInflowTotal = bsSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
+            let bsOutflowTotal = bsExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let bsCashBank = bsInflowTotal - bsOutflowTotal;
+
+            // Kirakan Nilai Stok Akhir Bersejarah
+            let historicalInventoryValue = 0;
+            if (!balanceMonth) {
+                historicalInventoryValue = products.reduce((sum, p) => sum + (Number(p.stock || 0) * (Number(p.cost) || Number(p.price) * 0.5)), 0);
+            } else {
+                const [bYear, bMonth] = balanceMonth.split('-').map(Number);
+                const endOfSelectedMonth = new Date(bYear, bMonth, 0, 23, 59, 59, 999);
+
+                products.forEach(p => {
+                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : (Number(p.price) * 0.5);
+                    let productHistoricalStock = Number(p.stock || 0);
+
+                    stockMovements.forEach(m => {
+                        if (String(m.productId) === String(p.id) || String(m.sku).toLowerCase() === String(p.sku).toLowerCase()) {
+                            const mDate = new Date(m.date);
+                            if (mDate > endOfSelectedMonth) {
+                                const qty = Number(m.qty || 0);
+                                if (m.type === 'IN') productHistoricalStock -= qty;
+                                else if (m.type === 'OUT') productHistoricalStock += qty;
+                                else if (m.type === 'ADJUST') productHistoricalStock -= (Number(m.after) - Number(m.before));
+                            }
+                        }
+                    });
+                    historicalInventoryValue += (Math.max(0, productHistoricalStock) * costPrice);
+                });
+            }
+
+            // Aset & Ekuiti
+            let totalAssets = bsCashBank + historicalInventoryValue;
+            let bsRetainedEarnings = pnlNetProfit; 
+            let bsEquityCapital = totalAssets - bsRetainedEarnings;
+
+            // Render ke UI Kunci Kira-Kira
+            document.getElementById('bsCashBank').innerText = `RM ${bsCashBank.toFixed(2)}`;
+            document.getElementById('bsInventory').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
+            document.getElementById('bsTotalAssets').innerText = `RM ${totalAssets.toFixed(2)}`;
+            document.getElementById('bsEquityCapital').innerText = `RM ${bsEquityCapital.toFixed(2)}`;
+            document.getElementById('bsRetainedEarnings').innerText = `RM ${bsRetainedEarnings.toFixed(2)}`;
+            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${(bsEquityCapital + bsRetainedEarnings).toFixed(2)}`;
         }
 
         function exportTransactionsCSV() {
