@@ -849,49 +849,79 @@
 
     <!-- MODAL REKOD PERBELANJAAN / TUNAI KELUAR -->
     <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white border border-rose-500/50 w-full max-w-md rounded-xl p-6 shadow-2xl">
+        <div class="bg-white border border-rose-500/30 w-full max-w-md rounded-xl p-6 shadow-2xl">
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
-                <h3 class="font-heading font-bold text-rose-700 text-md flex items-center">
-                    <i class="fa-solid fa-money-bill-transfer mr-2"></i> Rekod Tunai Keluar / Belanja
-                </h3>
+                <div>
+                    <h3 class="font-heading font-bold text-rose-600 text-md">Rekod Aliran Tunai</h3>
+                    <p class="text-[10px] text-slate-500 mt-1">Kos produk, belanja operasi, modal dan ambilan direkod berasingan.</p>
+                </div>
                 <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="my-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                <div class="font-bold mb-1">Contoh:</div>
+                <div>• Kain / tekstil, upah jahit, butang & zip → <b>Kos Pengeluaran / Inventori</b></div>
+                <div>• Sewa, gaji, utiliti, iklan → <b>Belanja Operasi</b></div>
+                <div>• Duit pemilik masuk → <b>Modal Pemilik</b></div>
+                <div>• Duit pemilik ambil keluar → <b>Ambilan Pemilik</b></div>
             </div>
 
             <div class="space-y-3 my-4">
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Tarikh Perbelanjaan:</label>
-                    <input type="date" id="expenseDate" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 font-bold focus:outline-none focus:border-rose-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Kategori Perbelanjaan:</label>
-                    <select id="expenseCategory" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-rose-500">
-                        <option value="Restok Stok / Inventori">Restok Stok / Inventori</option>
-                        <option value="Sewa Kedai / Tapak Event">Sewa Kedai / Tapak Event</option>
-                        <option value="Gaji & Komisen Staf">Gaji & Komisen Staf</option>
-                        <option value="Bil Utility & Fasiliti">Bil Utility & Fasiliti</option>
-                        <option value="Kos Penghantaran (Lalamove/JNT/Pos)">Kos Penghantaran (Lalamove/JNT/Pos)</option>
-                        <option value="Pemasaran & Iklan">Pemasaran & Iklan</option>
-                        <option value="Pelbagai / Lain-lain">Pelbagai / Lain-lain</option>
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Jenis Aliran:</label>
+                    <select id="expenseFlowType" onchange="updateExpenseFlowUI()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 font-bold focus:outline-none focus:border-gold-500">
+                        <option value="EXPENSE">Tunai Keluar / Belanja</option>
+                        <option value="CAPITAL_IN">Modal Pemilik Masuk</option>
+                        <option value="OWNER_DRAW">Ambilan Pemilik</option>
                     </select>
                 </div>
+
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Jumlah Tunai Keluar (RM):</label>
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Tarikh:</label>
+                    <input type="date" id="expenseDate" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 font-bold focus:outline-none focus:border-rose-500">
+                </div>
+
+                <div id="expenseCategoryWrap">
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Kategori:</label>
+                    <select id="expenseCategory" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-rose-500">
+                        <optgroup label="Kos Pengeluaran / Inventori">
+                            <option value="Kain / Tekstil">Kain / Tekstil</option>
+                            <option value="Upah Jahit">Upah Jahit</option>
+                            <option value="Butang / Zip / Aksesori">Butang / Zip / Aksesori</option>
+                            <option value="Label / Tag Produk">Label / Tag Produk</option>
+                            <option value="Packaging Produk">Packaging Produk</option>
+                            <option value="Restok Stok / Inventori">Restok Stok / Inventori</option>
+                        </optgroup>
+                        <optgroup label="Belanja Operasi">
+                            <option value="Sewa Kedai / Tapak Event">Sewa Kedai / Tapak Event</option>
+                            <option value="Gaji & Komisen Staf">Gaji & Komisen Staf</option>
+                            <option value="Bil Utility & Fasiliti">Bil Utility & Fasiliti</option>
+                            <option value="Kos Penghantaran (Lalamove/JNT/Pos)">Kos Penghantaran (Lalamove/JNT/Pos)</option>
+                            <option value="Pemasaran & Iklan">Pemasaran & Iklan</option>
+                            <option value="Pelbagai / Lain-lain">Pelbagai / Lain-lain</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div>
+                    <label id="expenseAmountLabel" class="block text-xs text-slate-700 mb-1 font-semibold">Jumlah Tunai Keluar (RM):</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01" class="w-full px-3 py-2 bg-white border border-rose-300 rounded text-xs font-extrabold text-rose-700 focus:outline-none focus:border-rose-500">
                 </div>
+
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1">Penerima / Keterangan Belanja:</label>
-                    <input type="text" id="expenseTitle" placeholder="Contoh: Bayar Lalamove / Restok Perfume" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none">
+                    <label id="expenseTitleLabel" class="block text-xs text-slate-700 mb-1">Penerima / Keterangan:</label>
+                    <input type="text" id="expenseTitle" placeholder="Contoh: Beli kain / bayar tukang jahit / modal tambahan" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none">
                 </div>
             </div>
 
             <div class="flex justify-end space-x-2 mt-4">
                 <button onclick="closeExpenseModal()" class="px-4 py-2 bg-greycair-200 hover:bg-greycair-300 text-xs text-slate-700 rounded font-semibold">Batal</button>
-                <button onclick="saveExpenseRecord()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded shadow-sm">Simpan Tunai Keluar</button>
+                <button id="expenseSaveButton" onclick="saveExpenseRecord()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded shadow-sm">Simpan Tunai Keluar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 2: Secure WooCommerce API Proxy -->
+    <!-- MODAL 2:<!-- MODAL 2: Secure WooCommerce API Proxy -->
     <div id="apiModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white border border-gold-500/40 w-full max-w-md rounded-xl p-6 shadow-2xl">
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
@@ -2882,29 +2912,77 @@
         }
 
         // ================= FUNGSI REKOD TUNAI KELUAR / BELANJA =================
-        function openExpenseModal() {
+        function openExpenseModal(defaultFlow='EXPENSE') {
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expenseTitle').value = '';
+            const flow = document.getElementById('expenseFlowType');
+            if (flow) flow.value = defaultFlow;
+            updateExpenseFlowUI();
             document.getElementById('expenseModal').classList.remove('hidden');
+            document.getElementById('expenseModal').classList.add('flex');
+        }
+
+        function updateExpenseFlowUI() {
+            const flow = document.getElementById('expenseFlowType')?.value || 'EXPENSE';
+            const categoryWrap = document.getElementById('expenseCategoryWrap');
+            const amountLabel = document.getElementById('expenseAmountLabel');
+            const titleLabel = document.getElementById('expenseTitleLabel');
+            const titleInput = document.getElementById('expenseTitle');
+            const button = document.getElementById('expenseSaveButton');
+
+            if (flow === 'CAPITAL_IN') {
+                if (categoryWrap) categoryWrap.classList.add('hidden');
+                if (amountLabel) amountLabel.innerText = 'Jumlah Modal Masuk (RM):';
+                if (titleLabel) titleLabel.innerText = 'Sumber / Keterangan:';
+                if (titleInput) titleInput.placeholder = 'Contoh: Modal tambahan pemilik';
+                if (button) {
+                    button.innerText = 'Simpan Modal Masuk';
+                    button.className = 'px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded shadow-sm';
+                }
+            } else if (flow === 'OWNER_DRAW') {
+                if (categoryWrap) categoryWrap.classList.add('hidden');
+                if (amountLabel) amountLabel.innerText = 'Jumlah Ambilan Pemilik (RM):';
+                if (titleLabel) titleLabel.innerText = 'Tujuan / Keterangan:';
+                if (titleInput) titleInput.placeholder = 'Contoh: Ambilan pemilik';
+                if (button) {
+                    button.innerText = 'Simpan Ambilan Pemilik';
+                    button.className = 'px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded shadow-sm';
+                }
+            } else {
+                if (categoryWrap) categoryWrap.classList.remove('hidden');
+                if (amountLabel) amountLabel.innerText = 'Jumlah Tunai Keluar (RM):';
+                if (titleLabel) titleLabel.innerText = 'Penerima / Keterangan Belanja:';
+                if (titleInput) titleInput.placeholder = 'Contoh: Bayar kain / upah jahit / Lalamove';
+                if (button) {
+                    button.innerText = 'Simpan Tunai Keluar';
+                    button.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded shadow-sm';
+                }
+            }
         }
 
         function closeExpenseModal() {
             document.getElementById('expenseModal').classList.add('hidden');
+            document.getElementById('expenseModal').classList.remove('flex');
         }
 
         function saveExpenseRecord() {
             const dateVal = document.getElementById('expenseDate').value;
-            const category = document.getElementById('expenseCategory').value;
+            const flowType = document.getElementById('expenseFlowType')?.value || 'EXPENSE';
+            const category = flowType === 'EXPENSE'
+                ? document.getElementById('expenseCategory').value
+                : (flowType === 'CAPITAL_IN' ? 'Modal Pemilik' : 'Ambilan Pemilik');
             const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-            const title = document.getElementById('expenseTitle').value.trim() || 'Perbelanjaan Am';
+            const title = document.getElementById('expenseTitle').value.trim() ||
+                (flowType === 'CAPITAL_IN' ? 'Modal Pemilik' :
+                 flowType === 'OWNER_DRAW' ? 'Ambilan Pemilik' : 'Perbelanjaan Am');
 
             if (!dateVal) {
-                alert('Sila pilih tarikh perbelanjaan.');
+                alert('Sila pilih tarikh.');
                 return;
             }
 
             if (amount <= 0) {
-                alert('Sila masukkan jumlah tunai keluar yang sah.');
+                alert('Sila masukkan jumlah yang sah.');
                 return;
             }
 
@@ -2913,6 +2991,7 @@
                 id: 'EXP-' + Date.now(),
                 date: expDateObj.toLocaleString('ms-MY'),
                 isoDate: expDateObj.toISOString(),
+                flowType: flowType,
                 category: category,
                 amount: amount,
                 title: title,
@@ -2922,14 +3001,23 @@
             expenseRecords.unshift(expRecord);
             localStorage.setItem('ec_expense_records', JSON.stringify(expenseRecords));
 
+            // Backend lama masih menyimpan rekod ini dalam sheet Perbelanjaan_TunaiKeluar.
+            // flowType/category membezakan modal, ambilan dan belanja.
             secureProxyRequest('saveExpense', { data: JSON.stringify(expRecord) }, function(res) {
                 closeExpenseModal();
                 updateFinancialReports();
-                alert(`Rekod Perbelanjaan RM ${amount.toFixed(2)} (${category}) Berjaya Disimpan!`);
+
+                if (flowType === 'CAPITAL_IN') {
+                    alert(`Modal Pemilik RM ${amount.toFixed(2)} berjaya direkod.`);
+                } else if (flowType === 'OWNER_DRAW') {
+                    alert(`Ambilan Pemilik RM ${amount.toFixed(2)} berjaya direkod.`);
+                } else {
+                    alert(`Rekod Tunai Keluar RM ${amount.toFixed(2)} (${category}) berjaya disimpan.`);
+                }
             }, function(err) {
                 closeExpenseModal();
                 updateFinancialReports();
-                alert(`Perbelanjaan RM ${amount.toFixed(2)} disimpan setempat (Ralat Sync: ${err.message})`);
+                alert(`Rekod disimpan setempat (Ralat Sync: ${err.message})`);
             });
         }
 
@@ -3688,10 +3776,30 @@
 
             let pnlNetSales = pnlGrossSales - pnlDiscounts;
             let pnlGrossProfit = pnlNetSales - pnlCogs;
-            // Restok inventori ialah pertukaran aset (Tunai -> Inventori), BUKAN belanja operasi P&L.
+            // Hanya flowType=EXPENSE masuk ke Untung Rugi.
+            // Modal masuk dan ambilan pemilik ialah transaksi ekuiti, bukan hasil/belanja.
+            // Kos pengeluaran/inventori pula tidak menjadi belanja operasi;
+            // kos produk sebenar masuk melalui COGS berdasarkan cost produk yang terjual.
             const pnlOperatingExpensesList = pnlExpensesList.filter(exp => {
+                const flow = String(exp.flowType || 'EXPENSE').toUpperCase();
+                if (flow !== 'EXPENSE') return false;
+
                 const cat = String(exp.category || '').toLowerCase();
-                return !(cat.includes('restok') || cat.includes('inventori') || cat.includes('stok'));
+                const isProductionOrInventory =
+                    cat.includes('kain') ||
+                    cat.includes('tekstil') ||
+                    cat.includes('jahit') ||
+                    cat.includes('butang') ||
+                    cat.includes('zip') ||
+                    cat.includes('aksesori') ||
+                    cat.includes('label') ||
+                    cat.includes('tag produk') ||
+                    cat.includes('packaging produk') ||
+                    cat.includes('restok') ||
+                    cat.includes('inventori') ||
+                    cat.includes('stok');
+
+                return !isProductionOrInventory;
             });
             let pnlExpensesTotal = pnlOperatingExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
             let pnlNetProfit = pnlGrossProfit - pnlExpensesTotal;
@@ -3784,16 +3892,31 @@
                 return parseYearMonth(tx.isoDate || tx.date) <= balanceMonth;
             });
 
-            const bsExpensesList = expenseRecords.filter(exp => {
+            const bsFlowsList = expenseRecords.filter(exp => {
                 if(!balanceMonth) return true;
                 return parseYearMonth(exp.isoDate || exp.date) <= balanceMonth;
             });
 
-            // Semua rekod "Tunai Keluar" memang mengurangkan tunai,
-            // termasuk restok, kerana wang benar-benar keluar.
-            let bsInflowTotal = bsSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
-            let bsOutflowTotal = bsExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-            let bsCashBank = bsInflowTotal - bsOutflowTotal;
+            // Aliran tunai:
+            // jualan + modal masuk - semua tunai keluar - ambilan pemilik.
+            const bsSalesInflow = bsSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
+            const bsCapitalInflow = bsFlowsList
+                .filter(exp => exp.flowType === 'CAPITAL_IN')
+                .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
+            const bsExpenseOutflow = bsFlowsList
+                .filter(exp => exp.flowType === 'EXPENSE')
+                .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
+            const bsOwnerDrawOutflow = bsFlowsList
+                .filter(exp => exp.flowType === 'OWNER_DRAW')
+                .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
+            let bsCashBank =
+                bsSalesInflow +
+                bsCapitalInflow -
+                bsExpenseOutflow -
+                bsOwnerDrawOutflow;
 
             // Nilai stok akhir bersejarah pada kos.
             let historicalInventoryValue = 0;
@@ -3832,8 +3955,8 @@
                 });
             }
 
-            // Untung terkumpul MESTI dikira secara kumulatif hingga bulan Kunci Kira-Kira,
-            // bukan menggunakan pnlNetProfit daripada filter P&L yang berasingan.
+            // Untung terkumpul = keuntungan bersih kumulatif.
+            // Modal bersih = semua modal masuk - semua ambilan pemilik.
             let bsGrossSales = 0;
             let bsDiscounts = 0;
             let bsCogs = 0;
@@ -3844,19 +3967,37 @@
 
                 (tx.items || []).forEach(i => {
                     let costPrice = Number(i.cost || 0);
+
                     if (!costPrice) {
                         const originalP = products.find(p => String(p.id) === String(i.id));
                         if (originalP) costPrice = Number(originalP.cost || 0);
-                        if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
                     }
+
+                    if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
                     bsCogs += costPrice * Number(i.qty || 1);
                 });
             });
 
-            // Restok stok tidak masuk Operating Expense kerana ia menjadi aset inventori.
-            const bsOperatingExpenses = bsExpensesList.filter(exp => {
+            const bsOperatingExpenses = bsFlowsList.filter(exp => {
+                const flow = String(exp.flowType || 'EXPENSE').toUpperCase();
+                if (flow !== 'EXPENSE') return false;
+
                 const cat = String(exp.category || '').toLowerCase();
-                return !(cat.includes('restok') || cat.includes('inventori') || cat.includes('stok'));
+
+                return !(
+                    cat.includes('kain') ||
+                    cat.includes('tekstil') ||
+                    cat.includes('jahit') ||
+                    cat.includes('butang') ||
+                    cat.includes('zip') ||
+                    cat.includes('aksesori') ||
+                    cat.includes('label') ||
+                    cat.includes('tag produk') ||
+                    cat.includes('packaging produk') ||
+                    cat.includes('restok') ||
+                    cat.includes('inventori') ||
+                    cat.includes('stok')
+                );
             });
 
             const bsOperatingExpensesTotal = bsOperatingExpenses.reduce(
@@ -3867,18 +4008,35 @@
             const bsGrossProfit = bsNetSales - bsCogs;
             const bsRetainedEarnings = bsGrossProfit - bsOperatingExpensesTotal;
 
-            // Buat masa ini sistem belum mempunyai ledger hutang/pemiutang berasingan.
-            // Oleh itu liabiliti kekal 0 sehingga modul liabiliti ditambah.
+            // Liabiliti masih 0 kerana sistem asal belum mempunyai ledger hutang.
             const bsCurrentLiabilities = 0;
+
+            const bsNetOwnerCapital =
+                bsCapitalInflow -
+                bsOwnerDrawOutflow;
 
             const totalAssets = bsCashBank + historicalInventoryValue;
 
-            // Modal/ekuiti pemilik ialah baki modal yang diperlukan oleh rekod sejarah semasa.
-            // Ini TIDAK lagi disamakan dengan nilai stok.
-            const bsEquityCapital = totalAssets - bsCurrentLiabilities - bsRetainedEarnings;
+            // Ekuiti pemilik terdiri daripada modal bersih + untung terkumpul.
+            // Jika data lama belum mempunyai rekod modal awal, sistem buat
+            // "modal pembukaan / pelarasan sejarah" sebagai baki supaya
+            // Kunci Kira-Kira tidak dipaksa menggunakan nilai stok sebagai modal.
+            const calculatedEquityBeforeOpening =
+                bsNetOwnerCapital + bsRetainedEarnings;
+
+            const openingEquityAdjustment =
+                totalAssets -
+                bsCurrentLiabilities -
+                calculatedEquityBeforeOpening;
+
+            const bsEquityCapital =
+                bsNetOwnerCapital +
+                openingEquityAdjustment;
 
             const totalLiabilitiesEquity =
-                bsCurrentLiabilities + bsEquityCapital + bsRetainedEarnings;
+                bsCurrentLiabilities +
+                bsEquityCapital +
+                bsRetainedEarnings;
 
             const balanceDifference = totalAssets - totalLiabilitiesEquity;
 
@@ -3901,6 +4059,11 @@
                     bsStatus.innerText = `⚠ TIDAK SEIMBANG: RM ${Math.abs(balanceDifference).toFixed(2)}`;
                 }
             }
+
+            // Nota ringkas untuk elak kekeliruan:
+            // Modal Pemilik = modal masuk bersih + pelarasan modal pembukaan bagi rekod sejarah.
+            // Nilai inventori tidak lagi digunakan sebagai modal.
+
         }
 
         function exportTransactionsCSV() {
