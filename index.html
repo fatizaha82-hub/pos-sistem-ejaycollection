@@ -335,17 +335,26 @@
                     
                     <div class="flex items-center space-x-3 text-xs font-semibold text-slate-700">
                         <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="orderType" value="Walk-In" checked class="mr-1 accent-gold-600"> Walk-In
+                            <input type="radio" name="orderType" value="Walk-In" checked onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Walk-In
                         </label>
                         <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="orderType" value="Online" class="mr-1 accent-gold-600"> Online
+                            <input type="radio" name="orderType" value="Online" onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Online
                         </label>
                         <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="orderType" value="Ejen" class="mr-1 accent-gold-600"> Ejen
+                            <input type="radio" name="orderType" value="Ejen" onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Ejen
                         </label>
                         <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="orderType" value="Stokis" class="mr-1 accent-gold-600"> Stokis
+                            <input type="radio" name="orderType" value="Stokis" onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Stokis
                         </label>
+                    </div>
+
+                    <div id="invoicePaymentStatusGroup" class="hidden mt-2 p-2 bg-white border border-gold-300 rounded-lg">
+                        <label for="invoicePaymentStatus" class="block text-[11px] font-bold text-slate-700 mb-1">Status Invois Ejen / Stokis</label>
+                        <select id="invoicePaymentStatus" onchange="updateInvoicePaymentUI()" class="w-full px-2 py-2 border border-greycair-300 rounded text-xs bg-white">
+                            <option value="PAID">Sudah Bayar</option>
+                            <option value="UNPAID">Belum Bayar (Kredit)</option>
+                        </select>
+                        <p id="invoicePaymentHint" class="text-[10px] text-slate-500 mt-1">Invois direkod sebagai telah dibayar.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-1.5">
@@ -1315,8 +1324,8 @@
 
                 <div class="flex flex-col lg:flex-row gap-2 mb-3">
                     <div class="relative flex-1 min-w-0">
-                        <input id="invSearch" oninput="renderInventoryTable()" placeholder="Cari produk / SKU..." class="w-full px-3 pr-9 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
-                        <button id="clearInvSearchBtn" type="button" onclick="clearInventorySearch()" aria-label="Kosongkan carian inventori" title="Kosongkan carian" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-600 text-sm font-bold leading-none items-center justify-center">×</button>
+                        <input id="invSearch" oninput="renderInventoryTable(); updateInventoryClearButton();" placeholder="Cari produk / SKU..." class="w-full px-3 pr-10 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                        <button id="clearInvSearchBtn" type="button" onclick="clearInventorySearch()" aria-label="Kosongkan carian inventori" title="Padam carian" style="display:none;position:absolute;right:7px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:9999px;background:#e2e8f0;color:#334155;font-size:18px;font-weight:700;line-height:20px;align-items:center;justify-content:center;cursor:pointer;z-index:10;">×</button>
                     </div>
                     <select id="invFilterStatus" onchange="renderInventoryTable()" class="px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800">
                         <option value="ALL">Semua Status</option><option value="OK">Stok OK</option><option value="LOW">Stok Rendah</option><option value="OUT">Habis</option>
@@ -1639,6 +1648,7 @@
             renderCategoryFilterButtons();
             renderProducts();
             renderCart();
+            updateInvoicePaymentUI();
             populateProductFilterDropdown();
             populateExternalSaleModalDropdowns();
             secureProxyRequest('setupPosSheets', {}, function() { console.log('Tab POS Google Sheet disediakan.'); }, function(err) { console.warn('Setup tab POS:', err.message); });
@@ -2613,7 +2623,26 @@
             }
         }
 
-        // PROSES BAYARAN (JANA RESIT RUNNING NUMBER EC-YYMMDD-001)
+        // PAPAR PILIHAN STATUS BAYARAN KHAS UNTUK INVOIS EJEN / STOKIS
+        function updateInvoicePaymentUI() {
+            const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
+            const orderType = orderTypeElem ? orderTypeElem.value : 'Walk-In';
+            const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(orderType));
+            const group = document.getElementById('invoicePaymentStatusGroup');
+            const statusElem = document.getElementById('invoicePaymentStatus');
+            const hint = document.getElementById('invoicePaymentHint');
+            const btn = document.getElementById('checkoutBtn');
+            if (group) group.classList.toggle('hidden', !isInvoice);
+            const isUnpaid = isInvoice && statusElem && statusElem.value === 'UNPAID';
+            if (hint) hint.textContent = isUnpaid
+                ? 'Invois akan direkod sebagai BELUM BAYAR. Baki penuh perlu dijelaskan kemudian.'
+                : 'Invois direkod sebagai telah dibayar.';
+            if (btn && !btn.disabled) btn.innerHTML = isInvoice
+                ? '<i class="fa-solid fa-file-invoice mr-2"></i> Jana Invois & Cetak'
+                : '<span>Bayar & Cetak Resit</span>' ;
+        }
+
+        // PROSES BAYARAN / JANA INVOIS EJEN DAN STOKIS
         function processCheckout() {
             if (cart.length === 0) {
                 alert('Troli anda masih kosong!');
@@ -2624,8 +2653,18 @@
             const discount = parseFloat(document.getElementById('discountInput').value) || 0;
             const grandTotal = Math.max(0, subtotal - discount);
             const cash = parseFloat(document.getElementById('cashTendered').value) || 0;
+            const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
+            const orderType = orderTypeElem ? orderTypeElem.value : 'Walk-In';
+            const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(orderType));
+            const invoiceStatus = isInvoice ? (document.getElementById('invoicePaymentStatus').value || 'PAID') : 'PAID';
+            const isUnpaidInvoice = isInvoice && invoiceStatus === 'UNPAID';
 
-            if (paymentMethod === 'Cash' && cash < grandTotal) {
+            if (isInvoice && (!document.getElementById('custName').value.trim())) {
+                alert('Sila masukkan nama ejen atau stokis untuk invois.');
+                return;
+            }
+
+            if (!isUnpaidInvoice && paymentMethod === 'Cash' && cash < grandTotal) {
                 alert('Jumlah tunai yang diterima tidak mencukupi!');
                 return;
             }
@@ -2639,9 +2678,6 @@
             const custName = document.getElementById('custName').value.trim() || 'Pelanggan Walk-In';
             const custPhone = document.getElementById('custPhone').value.trim() || '-';
             const staffName = currentUser ? currentUser.name : 'Staf';
-
-            const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
-            const orderType = orderTypeElem ? orderTypeElem.value : 'Walk-In';
 
             const now = new Date();
             const receiptNo = generateDailyReceiptNumber(now);
@@ -2660,9 +2696,13 @@
                 subtotal: subtotal,
                 discount: discount,
                 grandTotal: grandTotal,
-                paymentMethod: paymentMethod,
-                cashTendered: paymentMethod === 'Cash' ? cash : grandTotal,
-                change: paymentMethod === 'Cash' ? (cash - grandTotal) : 0
+                paymentMethod: isUnpaidInvoice ? 'Belum Bayar' : paymentMethod,
+                paymentStatus: isUnpaidInvoice ? 'UNPAID' : 'PAID',
+                paymentStatusLabel: isUnpaidInvoice ? 'BELUM BAYAR' : 'SUDAH BAYAR',
+                amountPaid: isUnpaidInvoice ? 0 : grandTotal,
+                outstandingAmount: isUnpaidInvoice ? grandTotal : 0,
+                cashTendered: isUnpaidInvoice ? 0 : (paymentMethod === 'Cash' ? cash : grandTotal),
+                change: isUnpaidInvoice ? grandTotal : (paymentMethod === 'Cash' ? (cash - grandTotal) : 0)
             };
 
             for (const item of cart) {
@@ -2671,7 +2711,7 @@
                 if (!p || variantAvailable < Number(item.qty)) {
                     alert(`Stok tidak mencukupi untuk ${item.name} (${item.size}/${item.color}). Stok semasa: ${p ? variantAvailable : 0}.`);
                     checkoutBtn.disabled = false;
-                    checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
+                    updateInvoicePaymentUI();
                     return;
                 }
             }
@@ -2693,7 +2733,7 @@
                 salesHistory.unshift(transaction);
                 pushTransactionStocksToWooCommerce(transaction);
 
-                if (paymentMethod === 'Cash') {
+                if (paymentMethod === 'Cash' && !isUnpaidInvoice) {
                     triggerCashDrawer();
                 }
 
@@ -2702,11 +2742,12 @@
                 updateFinancialReports();
                 
                 checkoutBtn.disabled = false;
-                checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
-                alert(`Bayaran RM ${grandTotal.toFixed(2)} Berjaya!\nNo Resit: #${receiptNo}`);
+                if (isInvoice) document.getElementById('invoicePaymentStatus').value = 'PAID';
+                updateInvoicePaymentUI();
+                alert(isInvoice ? `Invois ${invoiceStatus === 'UNPAID' ? 'BELUM BAYAR' : 'TELAH DIBAYAR'} berjaya dijana!\nNo Invois: #INV-${receiptNo}\nJumlah: RM ${grandTotal.toFixed(2)}${isUnpaidInvoice ? `\nBaki perlu dibayar: RM ${grandTotal.toFixed(2)}` : ''}` : `Bayaran RM ${grandTotal.toFixed(2)} Berjaya!\nNo Resit: #${receiptNo}`);
             }, function(err) {
                 checkoutBtn.disabled = false;
-                checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
+                updateInvoicePaymentUI();
                 alert('Ralat menyimpan ke Google Sheet: ' + err.message);
             });
         }
@@ -2722,7 +2763,9 @@
             document.getElementById('rcpStaff').innerText = `Juruwang/Staf: ${transaction.staffName || 'Staf POS'}`;
             document.getElementById('rcpCustomer').innerText = `Pelanggan: ${transaction.custName || 'Walk-In'} (${transaction.custPhone || '-'})`;
             
-            document.getElementById('rcpPaymentMethod').innerText = `Kaedah Bayaran: ${transaction.paymentMethod || 'Tunai'}`;
+            document.getElementById('rcpPaymentMethod').innerText = isInvoice
+                ? `Status Bayaran: ${transaction.paymentStatusLabel || (transaction.paymentStatus === 'UNPAID' ? 'BELUM BAYAR' : 'SUDAH BAYAR')}${transaction.paymentStatus === 'UNPAID' ? ' (KREDIT)' : ' | ' + (transaction.paymentMethod || 'Tunai')}`
+                : `Kaedah Bayaran: ${transaction.paymentMethod || 'Tunai'}`;
             
             const rcpItems = document.getElementById('rcpItems');
             rcpItems.innerHTML = '';
@@ -2739,8 +2782,10 @@
             document.getElementById('rcpSubtotal').innerText = `Subtotal: RM ${Number(transaction.subtotal || 0).toFixed(2)}`;
             document.getElementById('rcpDiscount').innerText = `Diskaun: RM ${Number(transaction.discount || 0).toFixed(2)}`;
             document.getElementById('rcpGrandTotal').innerText = `${isInvoice ? 'JUMLAH INVOIS' : 'JUMLAH BERSIH'}: RM ${Number(transaction.grandTotal || 0).toFixed(2)}`;
-            document.getElementById('rcpTendered').innerText = `${isInvoice ? 'Jumlah diterima' : 'Jumlah Bayar'}: RM ${Number(transaction.cashTendered || 0).toFixed(2)}`;
-            document.getElementById('rcpChange').innerText = `${isInvoice ? 'Baki perlu dibayar' : 'Baki'}: RM ${Number(transaction.change || 0).toFixed(2)}`;
+            document.getElementById('rcpTendered').innerText = `${isInvoice ? 'Jumlah diterima' : 'Jumlah Bayar'}: RM ${Number(transaction.amountPaid !== undefined ? transaction.amountPaid : (transaction.cashTendered || 0)).toFixed(2)}`;
+            document.getElementById('rcpChange').innerText = isInvoice
+                ? `Baki perlu dibayar: RM ${Number(transaction.outstandingAmount !== undefined ? transaction.outstandingAmount : (transaction.paymentStatus === 'UNPAID' ? transaction.grandTotal : transaction.change || 0)).toFixed(2)}`
+                : `Baki: RM ${Number(transaction.change || 0).toFixed(2)}`;
 
             window.print();
             
@@ -3234,21 +3279,27 @@
             document.getElementById('inventoryModal').classList.add('hidden');
             document.getElementById('inventoryModal').classList.remove('flex');
         }
+        function updateInventoryClearButton() {
+            const input = document.getElementById('invSearch');
+            const button = document.getElementById('clearInvSearchBtn');
+            if (!button) return;
+            const hasText = !!(input && input.value.length);
+            button.style.display = hasText ? 'flex' : 'none';
+            button.setAttribute('aria-hidden', hasText ? 'false' : 'true');
+        }
+
         function clearInventorySearch() {
             const input = document.getElementById('invSearch');
             if (!input) return;
             input.value = '';
+            updateInventoryClearButton();
             renderInventoryTable();
             input.focus();
         }
 
         function renderInventoryTable() {
             const searchInput = document.getElementById('invSearch');
-            const clearSearchBtn = document.getElementById('clearInvSearchBtn');
-            if (clearSearchBtn) {
-                clearSearchBtn.classList.toggle('hidden', !(searchInput && searchInput.value));
-                clearSearchBtn.classList.toggle('flex', !!(searchInput && searchInput.value));
-            }
+            updateInventoryClearButton();
             const q=(searchInput?.value||'').toLowerCase().trim();
             const filter=document.getElementById('invFilterStatus')?.value||'ALL';
             const body=document.getElementById('inventoryTableBody'); if(!body)return;
@@ -4073,14 +4124,16 @@
                         if (flowType === 'CAPITAL_IN') return;
 
                         const category = String(exp.category || 'Belanja');
-                        const description = String(exp.title || exp.recipientNote || exp.description || exp.category || 'Perbelanjaan');
+                        const detail = String(exp.title || exp.recipientNote || exp.description || '').trim();
+                        const description = detail && detail.toLowerCase() !== category.toLowerCase()
+                            ? `${category} (${detail})` : category;
                         const dateText = String(exp.date || '');
                         const safe = value => value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
                         cfExpenseBreakdown.innerHTML += `
                             <div class="flex justify-between items-start gap-3 border-b border-slate-100 py-1">
                                 <div class="min-w-0">
                                     <div class="font-semibold text-slate-700 break-words">- ${safe(description)}</div>
-                                    <div class="text-[10px] text-slate-500">${safe(category)}${dateText ? ' · ' + safe(dateText) : ''}</div>
+                                    ${dateText ? `<div class="text-[10px] text-slate-500">${safe(dateText)}</div>` : ''}
                                 </div>
                                 <span class="font-bold text-rose-600 whitespace-nowrap">(RM ${Number(exp.amount || exp.amountRM || 0).toFixed(2)})</span>
                             </div>
