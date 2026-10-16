@@ -340,6 +340,12 @@
                         <label class="flex items-center cursor-pointer">
                             <input type="radio" name="orderType" value="Online" class="mr-1 accent-gold-600"> Online
                         </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="orderType" value="Ejen" class="mr-1 accent-gold-600"> Ejen
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="orderType" value="Stokis" class="mr-1 accent-gold-600"> Stokis
+                        </label>
                     </div>
 
                     <div class="grid grid-cols-2 gap-1.5">
@@ -849,49 +855,79 @@
 
     <!-- MODAL REKOD PERBELANJAAN / TUNAI KELUAR -->
     <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white border border-rose-500/50 w-full max-w-md rounded-xl p-6 shadow-2xl">
+        <div class="bg-white border border-rose-500/30 w-full max-w-md rounded-xl p-6 shadow-2xl">
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
-                <h3 class="font-heading font-bold text-rose-700 text-md flex items-center">
-                    <i class="fa-solid fa-money-bill-transfer mr-2"></i> Rekod Tunai Keluar / Belanja
-                </h3>
+                <div>
+                    <h3 class="font-heading font-bold text-rose-600 text-md">Rekod Aliran Tunai</h3>
+                    <p class="text-[10px] text-slate-500 mt-1">Kos produk, belanja operasi, modal dan ambilan direkod berasingan.</p>
+                </div>
                 <button onclick="closeExpenseModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="my-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                <div class="font-bold mb-1">Contoh:</div>
+                <div>• Kain / tekstil, upah jahit, butang & zip → <b>Kos Pengeluaran / Inventori</b></div>
+                <div>• Sewa, gaji, utiliti, iklan → <b>Belanja Operasi</b></div>
+                <div>• Duit pemilik masuk → <b>Modal Pemilik</b></div>
+                <div>• Duit pemilik ambil keluar → <b>Ambilan Pemilik</b></div>
             </div>
 
             <div class="space-y-3 my-4">
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Tarikh Perbelanjaan:</label>
-                    <input type="date" id="expenseDate" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 font-bold focus:outline-none focus:border-rose-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Kategori Perbelanjaan:</label>
-                    <select id="expenseCategory" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-rose-500">
-                        <option value="Restok Stok / Inventori">Restok Stok / Inventori</option>
-                        <option value="Sewa Kedai / Tapak Event">Sewa Kedai / Tapak Event</option>
-                        <option value="Gaji & Komisen Staf">Gaji & Komisen Staf</option>
-                        <option value="Bil Utility & Fasiliti">Bil Utility & Fasiliti</option>
-                        <option value="Kos Penghantaran (Lalamove/JNT/Pos)">Kos Penghantaran (Lalamove/JNT/Pos)</option>
-                        <option value="Pemasaran & Iklan">Pemasaran & Iklan</option>
-                        <option value="Pelbagai / Lain-lain">Pelbagai / Lain-lain</option>
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Jenis Aliran:</label>
+                    <select id="expenseFlowType" onchange="updateExpenseFlowUI()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 font-bold focus:outline-none focus:border-gold-500">
+                        <option value="EXPENSE">Tunai Keluar / Belanja</option>
+                        <option value="CAPITAL_IN">Modal Pemilik Masuk</option>
+                        <option value="OWNER_DRAW">Ambilan Pemilik</option>
                     </select>
                 </div>
+
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Jumlah Tunai Keluar (RM):</label>
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Tarikh:</label>
+                    <input type="date" id="expenseDate" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 font-bold focus:outline-none focus:border-rose-500">
+                </div>
+
+                <div id="expenseCategoryWrap">
+                    <label class="block text-xs text-slate-700 mb-1 font-semibold">Kategori:</label>
+                    <select id="expenseCategory" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-rose-500">
+                        <optgroup label="Kos Pengeluaran / Inventori">
+                            <option value="Kain / Tekstil">Kain / Tekstil</option>
+                            <option value="Upah Jahit">Upah Jahit</option>
+                            <option value="Butang / Zip / Aksesori">Butang / Zip / Aksesori</option>
+                            <option value="Label / Tag Produk">Label / Tag Produk</option>
+                            <option value="Packaging Produk">Packaging Produk</option>
+                            <option value="Restok Stok / Inventori">Restok Stok / Inventori</option>
+                        </optgroup>
+                        <optgroup label="Belanja Operasi">
+                            <option value="Sewa Kedai / Tapak Event">Sewa Kedai / Tapak Event</option>
+                            <option value="Gaji & Komisen Staf">Gaji & Komisen Staf</option>
+                            <option value="Bil Utility & Fasiliti">Bil Utility & Fasiliti</option>
+                            <option value="Kos Penghantaran (Lalamove/JNT/Pos)">Kos Penghantaran (Lalamove/JNT/Pos)</option>
+                            <option value="Pemasaran & Iklan">Pemasaran & Iklan</option>
+                            <option value="Pelbagai / Lain-lain">Pelbagai / Lain-lain</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div>
+                    <label id="expenseAmountLabel" class="block text-xs text-slate-700 mb-1 font-semibold">Jumlah Tunai Keluar (RM):</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01" class="w-full px-3 py-2 bg-white border border-rose-300 rounded text-xs font-extrabold text-rose-700 focus:outline-none focus:border-rose-500">
                 </div>
+
                 <div>
-                    <label class="block text-xs text-slate-700 mb-1">Penerima / Keterangan Belanja:</label>
-                    <input type="text" id="expenseTitle" placeholder="Contoh: Bayar Lalamove / Restok Perfume" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none">
+                    <label id="expenseTitleLabel" class="block text-xs text-slate-700 mb-1">Penerima / Keterangan:</label>
+                    <input type="text" id="expenseTitle" placeholder="Contoh: Beli kain / bayar tukang jahit / modal tambahan" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none">
                 </div>
             </div>
 
             <div class="flex justify-end space-x-2 mt-4">
                 <button onclick="closeExpenseModal()" class="px-4 py-2 bg-greycair-200 hover:bg-greycair-300 text-xs text-slate-700 rounded font-semibold">Batal</button>
-                <button onclick="saveExpenseRecord()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded shadow-sm">Simpan Tunai Keluar</button>
+                <button id="expenseSaveButton" onclick="saveExpenseRecord()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded shadow-sm">Simpan Tunai Keluar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL 2: Secure WooCommerce API Proxy -->
+    <!-- MODAL 2:<!-- MODAL 2: Secure WooCommerce API Proxy -->
     <div id="apiModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white border border-gold-500/40 w-full max-w-md rounded-xl p-6 shadow-2xl">
             <div class="flex justify-between items-center pb-3 border-b border-greycair-200">
@@ -1147,10 +1183,10 @@
                             <div class="space-y-1.5 pl-3 border-l-2 border-slate-400">
                                 <div class="flex justify-between text-xs text-slate-700">
                                     <span>Liabiliti Semasa (Pemiutang)</span>
-                                    <span>RM 0.00</span>
+                                    <span id="bsCurrentLiabilities" class="font-bold">RM 0.00</span>
                                 </div>
                                 <div class="flex justify-between text-xs text-slate-700">
-                                    <span>Ekuiti Pemilik / Modal (Nilai Kos Stok Bersejarah)</span>
+                                    <span>Ekuiti Pemilik / Modal (Baki Modal)</span>
                                     <span id="bsEquityCapital" class="font-bold">RM 0.00</span>
                                 </div>
                                 <div class="flex justify-between text-xs text-slate-700">
@@ -1161,6 +1197,9 @@
                             <div class="flex justify-between font-bold text-slate-800 mt-2 pt-2 border-t border-greycair-300">
                                 <span>JUMLAH LIABILITI & EKUITI</span>
                                 <span id="bsTotalLiabilitiesEquity" class="text-gold-600">RM 0.00</span>
+                            </div>
+                            <div id="bsBalanceStatus" class="mt-3 p-2 rounded text-center text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                ✓ KUNCI KIRA-KIRA SEIMBANG
                             </div>
                         </div>
                     </div>
@@ -1255,7 +1294,7 @@
             <div class="px-5 py-4 border-b border-greycair-200 flex justify-between items-center">
                 <div>
                     <h3 class="font-heading font-bold text-gold-600 text-lg">Pengurusan Inventori</h3>
-                    <p class="text-[11px] text-slate-500">Tambah produk, restok, simpan ke Google Sheet, eksport & import CSV.</p>
+                    <p class="text-[11px] text-slate-500">Tambah produk, restok, pelarasan stok dan sejarah pergerakan stok.</p>
                 </div>
                 <button onclick="closeInventoryModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
@@ -1269,24 +1308,13 @@
                     <div class="bg-greycair-50 border border-greycair-200 rounded-lg p-3"><div class="text-[10px] text-slate-500 font-semibold">NILAI STOK</div><div id="invStatValue" class="text-xl font-bold text-emerald-600">RM 0.00</div></div>
                 </div>
 
-                <div class="flex flex-col lg:flex-row gap-2 mb-3 flex-wrap">
-                    <input id="invSearch" oninput="renderInventoryTable()" placeholder="Cari produk / SKU..." class="flex-1 min-w-[200px] px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                <div class="flex flex-col lg:flex-row gap-2 mb-3">
+                    <input id="invSearch" oninput="renderInventoryTable()" placeholder="Cari produk / SKU..." class="flex-1 px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
                     <select id="invFilterStatus" onchange="renderInventoryTable()" class="px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800">
                         <option value="ALL">Semua Status</option><option value="OK">Stok OK</option><option value="LOW">Stok Rendah</option><option value="OUT">Habis</option>
                     </select>
-                    
-                    <button onclick="openAddProductModal()" class="px-3 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded-lg text-xs font-bold shadow-sm whitespace-nowrap"><i class="fa-solid fa-plus mr-1"></i> Produk Baharu</button>
-                    
-                    <button onclick="saveProductsToGSheet()" class="px-3 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold shadow-sm whitespace-nowrap admin-only"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Simpan Ke GSheet</button>
-                    
-                    <button onclick="exportInventoryCSV()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-sm whitespace-nowrap"><i class="fa-solid fa-file-excel mr-1"></i> Eksport CSV</button>
-                    
-                    <label class="px-3 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold shadow-sm cursor-pointer whitespace-nowrap flex items-center">
-                        <i class="fa-solid fa-file-import mr-1"></i> Import CSV
-                        <input type="file" id="importInventoryFileInput" accept=".csv" onchange="importInventoryCSV(event)" class="hidden">
-                    </label>
-
-                    <button onclick="openStockMovementModal()" class="px-3 py-2 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded-lg text-xs font-bold border border-greycair-300 whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Pergerakan Stok</button>
+                    <button onclick="openAddProductModal()" class="px-4 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Produk Baharu</button>
+                    <button onclick="openStockMovementModal()" class="px-4 py-2 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded-lg text-xs font-bold border border-greycair-300"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Pergerakan Stok</button>
                 </div>
 
                 <div class="overflow-x-auto border border-greycair-200 rounded-xl">
@@ -1555,8 +1583,10 @@
             const str = String(dateInput).trim();
             if (str.includes('T')) return str.slice(0, 7);
             
+            // Format YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0, 7);
             
+            // Try parse date
             const d = new Date(str);
             if (!isNaN(d.getTime())) {
                 const yyyy = d.getFullYear();
@@ -1651,7 +1681,7 @@
             const select = document.getElementById('barcodeProductSelect');
             select.innerHTML = '';
             products.forEach(p => {
-                select.innerHTML += `<option value="${p.id}">${p.name} (${p.sku}) - RM ${p.price.toFixed(2)} [Stok: ${p.stock}]</option>`;
+                select.innerHTML += `<option value="${p.id}">${p.name} (${p.sku}) - RM ${p.price.toFixed(2)}</option>`;
             });
             generateBarcodePreview();
             document.getElementById('barcodeModal').classList.remove('hidden');
@@ -1883,7 +1913,8 @@
                     stock: Math.max(0, Number(p.stock ?? 0)),
                     minStock: Number(p.minStock ?? 5),
                     sizes: p.sizes && p.sizes.length ? p.sizes : (p.category?.toLowerCase().includes('perfume') ? ['30ml', '50ml', '100ml'] : ['Free Size']),
-                    colors: p.colors && p.colors.length ? p.colors : ['Piawai']
+                    colors: p.colors && p.colors.length ? p.colors : ['Piawai'],
+                    variantStocks: p.variantStocks && typeof p.variantStocks === 'object' ? p.variantStocks : {}
                 };
             });
             saveProducts();
@@ -2297,7 +2328,7 @@
                         <div class="relative h-36 bg-greycair-100 overflow-hidden">
                             <img src="${imgUrl}" alt="${prod.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                             <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 bg-white/90 text-gold-700 rounded border border-gold-500/30 uppercase tracking-wider">${prod.category}</span>
-                            <span id="card_stock_badge_${prod.id}" class="absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 ${prod.stock <= 0 ? 'bg-red-800 text-white' : (prod.stock <= prod.minStock ? 'bg-amber-600 text-white' : 'bg-slate-800 text-white')} rounded backdrop-blur-sm">Baki Stok: ${prod.stock}</span>
+                            <span class="absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 ${prod.stock <= 0 ? 'bg-red-800 text-white' : (prod.stock <= prod.minStock ? 'bg-amber-600 text-white' : 'bg-slate-800 text-white')} rounded backdrop-blur-sm">Stok: ${prod.stock}</span>
                         </div>
 
                         <div class="p-3 flex-1 flex flex-col justify-between">
@@ -2311,20 +2342,21 @@
                                 <div class="grid grid-cols-2 gap-1.5 my-1.5 pt-1.5 border-t border-greycair-200">
                                     <div>
                                         <label class="block text-[9px] text-slate-500">${sizeLabel}</label>
-                                        <select id="size_select_${prod.id}" onchange="updateCardStockDisplay(${prod.id})" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
+                                        <select id="size_select_${prod.id}" onchange="showSelectedProductStock(${prod.id})" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
                                             ${sizeOptions}
                                         </select>
                                     </div>
                                     <div>
                                         <label class="block text-[9px] text-slate-500">${colorLabel}</label>
-                                        <select id="color_select_${prod.id}" onchange="updateCardStockDisplay(${prod.id})" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
+                                        <select id="color_select_${prod.id}" onchange="showSelectedProductStock(${prod.id})" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
                                             ${colorOptions}
                                         </select>
                                     </div>
                                 </div>
+                                <div id="selected_stock_${prod.id}" class="mt-1.5 px-2 py-1 rounded bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700">Stok tersedia: ${Number(prod.stock || 0)} unit</div>
                             </div>
 
-                            <button onclick="addToCart(${prod.id})" ${prod.stock <= 0 ? 'disabled' : ''} class="w-full py-1.5 mt-1 ${prod.stock <= 0 ? 'bg-greycair-200 text-slate-400 cursor-not-allowed' : 'bg-gold-500 hover:bg-gold-600 text-white'} rounded font-bold text-xs shadow-sm transition flex items-center justify-center">
+                            <button data-add-product-id="${String(prod.id)}" onclick="addToCart(${prod.id})" class="w-full py-1.5 mt-1 bg-gold-500 hover:bg-gold-600 text-white rounded font-bold text-xs shadow-sm transition flex items-center justify-center">
                                 <i class="fa-solid ${prod.stock <= 0 ? 'fa-ban' : 'fa-plus'} mr-1"></i> ${prod.stock <= 0 ? 'Stok Habis' : 'Tambah Ke Troli'}
                             </button>
                         </div>
@@ -2332,18 +2364,8 @@
                 `;
             });
 
+            paginatedItems.forEach(prod => showSelectedProductStock(prod.id));
             renderPagination(totalItems, startIndex, paginatedItems.length);
-        }
-
-        // FUNGSI UPDATE TAYANGAN BAKI STOK PADA KAD PRODUK SECARA LIVE
-        function updateCardStockDisplay(productId) {
-            const prod = products.find(p => String(p.id) === String(productId));
-            if (!prod) return;
-            const badge = document.getElementById(`card_stock_badge_${productId}`);
-            if (badge) {
-                badge.innerText = `Baki Stok: ${prod.stock}`;
-                badge.className = `absolute top-2 right-2 text-[10px] font-semibold px-2 py-0.5 ${prod.stock <= 0 ? 'bg-red-800 text-white' : (prod.stock <= prod.minStock ? 'bg-amber-600 text-white' : 'bg-slate-800 text-white')} rounded backdrop-blur-sm`;
-            }
         }
 
         // NAVIGASI PAGINASI
@@ -2403,6 +2425,56 @@
             renderProducts(); 
         }
 
+        // Stok mengikut gabungan produk + saiz + warna.
+        function variantStockKey(size, color) { return String(size || 'Free Size') + '||' + String(color || 'Piawai'); }
+        function getVariantStock(product, size, color) {
+            const key = variantStockKey(size, color);
+            const map = product && product.variantStocks && typeof product.variantStocks === 'object' ? product.variantStocks : {};
+            return Object.prototype.hasOwnProperty.call(map, key) ? Math.max(0, Number(map[key]) || 0) : Math.max(0, Number(product && product.stock) || 0);
+        }
+        function getSelectedVariant(productId) {
+            return { size: document.getElementById(`size_select_${productId}`)?.value || 'Free Size', color: document.getElementById(`color_select_${productId}`)?.value || 'Piawai' };
+        }
+        function getVariantStockTotal(product) {
+            const map = product && product.variantStocks && typeof product.variantStocks === 'object' ? product.variantStocks : {};
+            if (!Object.keys(map).length) return Math.max(0, Number(product.stock) || 0);
+            return Object.values(map).reduce((sum, n) => sum + Math.max(0, Number(n) || 0), 0);
+        }
+        function initializeVariantStocks(product, selectedSize, selectedColor) {
+            if (!product.variantStocks || typeof product.variantStocks !== 'object') product.variantStocks = {};
+            if (!Object.keys(product.variantStocks).length) {
+                // Migrasi stok lama: baki sedia ada diletakkan pada variasi yang sedang dipilih.
+                const allSizes = product.sizes && product.sizes.length ? product.sizes : ['Free Size'];
+                const allColors = product.colors && product.colors.length ? product.colors : ['Piawai'];
+                allSizes.forEach(sz => allColors.forEach(cl => { product.variantStocks[variantStockKey(sz, cl)] = 0; }));
+                product.variantStocks[variantStockKey(selectedSize, selectedColor)] = Math.max(0, Number(product.stock) || 0);
+            }
+        }
+        function showSelectedProductStock(productId) {
+            const product = products.find(p => String(p.id) === String(productId));
+            const stockEl = document.getElementById(`selected_stock_${productId}`);
+            const addBtn = document.querySelector(`button[data-add-product-id="${String(productId)}"]`);
+            if (!product || !stockEl) return;
+            const selected = getSelectedVariant(productId);
+            const map = product.variantStocks && typeof product.variantStocks === 'object' ? product.variantStocks : {};
+            const key = variantStockKey(selected.size, selected.color);
+            const isUnallocated = !Object.keys(map).length || !Object.prototype.hasOwnProperty.call(map, key);
+            const stock = getVariantStock(product, selected.size, selected.color);
+            stockEl.textContent = isUnallocated ? `Stok variasi belum diperincikan • Jumlah produk: ${stock} unit` : `Stok ${selected.size} / ${selected.color}: ${stock} unit`;
+            stockEl.className = 'mt-1.5 px-2 py-1 rounded border text-[10px] font-bold ' + (stock <= 0 ? 'bg-red-50 border-red-200 text-red-700' : (stock <= Number(product.minStock || 5) ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'));
+            if (addBtn) { addBtn.disabled = stock <= 0; addBtn.className = `w-full py-1.5 mt-1 ${stock <= 0 ? 'bg-greycair-200 text-slate-400 cursor-not-allowed' : 'bg-gold-500 hover:bg-gold-600 text-white'} rounded font-bold text-xs shadow-sm transition flex items-center justify-center`; addBtn.innerHTML = `<i class="fa-solid ${stock <= 0 ? 'fa-ban' : 'fa-plus'} mr-1"></i> ${stock <= 0 ? 'Stok Habis' : 'Tambah Ke Troli'}`; }
+        }
+
+        function syncInventoryToGoogleSheet() {
+            const cfg = getWooProxyConfig();
+            if (!cfg.url || !cfg.token || !Array.isArray(products)) return;
+            secureProxyRequest('syncInventory', { data: JSON.stringify(products) }, function(result) {
+                console.log('Rekod inventory Google Sheet dikemas kini:', result.count || 0);
+            }, function(err) {
+                console.warn('Gagal mengemas kini inventory Google Sheet:', err.message);
+            });
+        }
+
         function addToCart(productId) {
             const product = products.find(p => String(p.id) === String(productId));
             if (!product) return;
@@ -2410,15 +2482,15 @@
             const selectedColor = document.getElementById(`color_select_${productId}`)?.value || 'Piawai';
             const cartItemId = `${productId}-${selectedSize}-${selectedColor}`;
             const existing = cart.find(item => item.cartItemId === cartItemId);
-            const totalForProduct = cart.filter(x=>String(x.id)===String(product.id)).reduce((n,x)=>n+x.qty,0);
-            if(totalForProduct >= Number(product.stock||0)) {
-                alert(`Stok ${product.name} tidak mencukupi. Stok semasa: ${product.stock}.`);
+            const variantStock = getVariantStock(product, selectedSize, selectedColor);
+            const cartQtyForVariant = cart.filter(x=>String(x.id)===String(product.id) && x.size===selectedSize && x.color===selectedColor).reduce((n,x)=>n+x.qty,0);
+            if(cartQtyForVariant >= variantStock) {
+                alert(`Stok ${product.name} (${selectedSize}/${selectedColor}) tidak mencukupi. Stok semasa: ${variantStock}.`);
                 return;
             }
             if (existing) existing.qty += 1;
             else cart.push({cartItemId,id:product.id,name:product.name,category:product.category,price:product.price,cost:product.cost||0,size:selectedSize,color:selectedColor,qty:1});
             renderCart();
-            updateCardStockDisplay(productId);
         }
 
         function updateQty(cartItemId, delta) {
@@ -2426,13 +2498,13 @@
             if (!item) return;
             if(delta>0) {
                 const p=products.find(x=>String(x.id)===String(item.id));
-                const totalForProduct=cart.filter(x=>String(x.id)===String(item.id)).reduce((n,x)=>n+x.qty,0);
-                if(p && totalForProduct >= Number(p.stock||0)) { alert(`Stok ${p.name} tidak mencukupi. Stok semasa: ${p.stock}.`); return; }
+                const totalForVariant=cart.filter(x=>String(x.id)===String(item.id) && x.size===item.size && x.color===item.color).reduce((n,x)=>n+x.qty,0);
+                const available=p ? getVariantStock(p,item.size,item.color) : 0;
+                if(p && totalForVariant >= available) { alert(`Stok ${p.name} (${item.size}/${item.color}) tidak mencukupi. Stok semasa: ${available}.`); return; }
             }
             item.qty += delta;
             if (item.qty <= 0) cart = cart.filter(i => i.cartItemId !== cartItemId);
             renderCart();
-            if(item.id) updateCardStockDisplay(item.id);
         }
 
         function clearCart() {
@@ -2442,7 +2514,6 @@
             document.getElementById('custName').value = '';
             document.getElementById('custPhone').value = '';
             renderCart();
-            renderProducts();
         }
 
         function renderCart() {
@@ -2559,6 +2630,7 @@
 
             const transaction = {
                 orderNo: receiptNo,
+                invoiceNo: /ejen|agen|stokis|stockist|wholesale/i.test(String(orderType)) ? 'INV-' + receiptNo : '',
                 orderType: orderType,
                 channel: 'POS Butik',
                 staffName: staffName,
@@ -2577,8 +2649,9 @@
 
             for (const item of cart) {
                 const p = products.find(x => String(x.id) === String(item.id));
-                if (!p || Number(p.stock) < Number(item.qty)) {
-                    alert(`Stok tidak mencukupi untuk ${item.name}. Stok semasa: ${p ? p.stock : 0}.`);
+                const variantAvailable = p ? getVariantStock(p, item.size, item.color) : 0;
+                if (!p || variantAvailable < Number(item.qty)) {
+                    alert(`Stok tidak mencukupi untuk ${item.name} (${item.size}/${item.color}). Stok semasa: ${p ? variantAvailable : 0}.`);
                     checkoutBtn.disabled = false;
                     checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
                     return;
@@ -2587,11 +2660,16 @@
 
             for (const item of cart) {
                 const p = products.find(x => String(x.id) === String(item.id));
-                const before = p.stock;
-                p.stock -= item.qty;
-                recordStockMovement(p, 'OUT', item.qty, before, p.stock, `${transaction.orderNo} | POS (${item.size}/${item.color})`);
+                initializeVariantStocks(p, item.size, item.color);
+                const vKey = variantStockKey(item.size, item.color);
+                const before = Math.max(0, Number(p.variantStocks[vKey]) || 0);
+                p.variantStocks[vKey] = Math.max(0, before - Number(item.qty));
+                const after = p.variantStocks[vKey];
+                p.stock = getVariantStockTotal(p);
+                recordStockMovement(p, 'OUT', item.qty, before, after, `${transaction.orderNo} | POS (${item.size}/${item.color})`);
             }
             saveProducts();
+            syncInventoryToGoogleSheet();
 
             secureProxyRequest('saveSale', { data: JSON.stringify(transaction) }, function(res) {
                 salesHistory.unshift(transaction);
@@ -2604,7 +2682,6 @@
                 printReceipt(transaction);
                 clearCart();
                 updateFinancialReports();
-                renderProducts();
                 
                 checkoutBtn.disabled = false;
                 checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
@@ -2620,9 +2697,10 @@
         function printReceipt(transaction) {
             document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col print-mode-receipt";
 
+            const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(transaction.orderType || ''));
             document.getElementById('rcpDate').innerText = `Tarikh: ${transaction.date}`;
-            document.getElementById('rcpOrderNo').innerText = `No Resit: #${transaction.orderNo}`;
-            document.getElementById('rcpOrderType').innerText = `Jenis: ${transaction.orderType || 'Walk-In'}`;
+            document.getElementById('rcpOrderNo').innerText = `${isInvoice ? 'No Invois' : 'No Resit'}: #${transaction.invoiceNo || transaction.orderNo}`;
+            document.getElementById('rcpOrderType').innerText = `${isInvoice ? 'INVOIS' : 'Jenis'}: ${transaction.orderType || 'Walk-In'}`;
             document.getElementById('rcpStaff').innerText = `Juruwang/Staf: ${transaction.staffName || 'Staf POS'}`;
             document.getElementById('rcpCustomer').innerText = `Pelanggan: ${transaction.custName || 'Walk-In'} (${transaction.custPhone || '-'})`;
             
@@ -2642,9 +2720,9 @@
 
             document.getElementById('rcpSubtotal').innerText = `Subtotal: RM ${Number(transaction.subtotal || 0).toFixed(2)}`;
             document.getElementById('rcpDiscount').innerText = `Diskaun: RM ${Number(transaction.discount || 0).toFixed(2)}`;
-            document.getElementById('rcpGrandTotal').innerText = `JUMLAH BERSIH: RM ${Number(transaction.grandTotal || 0).toFixed(2)}`;
-            document.getElementById('rcpTendered').innerText = `Jumlah Bayar: RM ${Number(transaction.cashTendered || 0).toFixed(2)}`;
-            document.getElementById('rcpChange').innerText = `Baki: RM ${Number(transaction.change || 0).toFixed(2)}`;
+            document.getElementById('rcpGrandTotal').innerText = `${isInvoice ? 'JUMLAH INVOIS' : 'JUMLAH BERSIH'}: RM ${Number(transaction.grandTotal || 0).toFixed(2)}`;
+            document.getElementById('rcpTendered').innerText = `${isInvoice ? 'Jumlah diterima' : 'Jumlah Bayar'}: RM ${Number(transaction.cashTendered || 0).toFixed(2)}`;
+            document.getElementById('rcpChange').innerText = `${isInvoice ? 'Baki perlu dibayar' : 'Baki'}: RM ${Number(transaction.change || 0).toFixed(2)}`;
 
             window.print();
             
@@ -2710,7 +2788,7 @@
                 pSelect.innerHTML = '<option value="">-- Tiada Produk Ditemui --</option>';
             } else {
                 listToRender.forEach(p => {
-                    pSelect.innerHTML += `<option value="${p.id}">${p.name} (${p.sku || 'EC-000'}) - [Stok: ${p.stock}]</option>`;
+                    pSelect.innerHTML += `<option value="${p.id}">${p.name} (${p.sku || 'EC-000'})</option>`;
                 });
             }
 
@@ -2832,7 +2910,6 @@
                 pushTransactionStocksToWooCommerce(transaction);
                 closeExternalSaleModal();
                 updateFinancialReports();
-                renderProducts();
                 alert(`Jualan dari ${channel} berjaya direkodkan!\nNo Resit: #${receiptNo}`);
             }, function(err) {
                 alert('Gagal simpan ke Google Sheet: ' + err.message);
@@ -2904,29 +2981,77 @@
         }
 
         // ================= FUNGSI REKOD TUNAI KELUAR / BELANJA =================
-        function openExpenseModal() {
+        function openExpenseModal(defaultFlow='EXPENSE') {
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expenseTitle').value = '';
+            const flow = document.getElementById('expenseFlowType');
+            if (flow) flow.value = defaultFlow;
+            updateExpenseFlowUI();
             document.getElementById('expenseModal').classList.remove('hidden');
+            document.getElementById('expenseModal').classList.add('flex');
+        }
+
+        function updateExpenseFlowUI() {
+            const flow = document.getElementById('expenseFlowType')?.value || 'EXPENSE';
+            const categoryWrap = document.getElementById('expenseCategoryWrap');
+            const amountLabel = document.getElementById('expenseAmountLabel');
+            const titleLabel = document.getElementById('expenseTitleLabel');
+            const titleInput = document.getElementById('expenseTitle');
+            const button = document.getElementById('expenseSaveButton');
+
+            if (flow === 'CAPITAL_IN') {
+                if (categoryWrap) categoryWrap.classList.add('hidden');
+                if (amountLabel) amountLabel.innerText = 'Jumlah Modal Masuk (RM):';
+                if (titleLabel) titleLabel.innerText = 'Sumber / Keterangan:';
+                if (titleInput) titleInput.placeholder = 'Contoh: Modal tambahan pemilik';
+                if (button) {
+                    button.innerText = 'Simpan Modal Masuk';
+                    button.className = 'px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded shadow-sm';
+                }
+            } else if (flow === 'OWNER_DRAW') {
+                if (categoryWrap) categoryWrap.classList.add('hidden');
+                if (amountLabel) amountLabel.innerText = 'Jumlah Ambilan Pemilik (RM):';
+                if (titleLabel) titleLabel.innerText = 'Tujuan / Keterangan:';
+                if (titleInput) titleInput.placeholder = 'Contoh: Ambilan pemilik';
+                if (button) {
+                    button.innerText = 'Simpan Ambilan Pemilik';
+                    button.className = 'px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded shadow-sm';
+                }
+            } else {
+                if (categoryWrap) categoryWrap.classList.remove('hidden');
+                if (amountLabel) amountLabel.innerText = 'Jumlah Tunai Keluar (RM):';
+                if (titleLabel) titleLabel.innerText = 'Penerima / Keterangan Belanja:';
+                if (titleInput) titleInput.placeholder = 'Contoh: Bayar kain / upah jahit / Lalamove';
+                if (button) {
+                    button.innerText = 'Simpan Tunai Keluar';
+                    button.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded shadow-sm';
+                }
+            }
         }
 
         function closeExpenseModal() {
             document.getElementById('expenseModal').classList.add('hidden');
+            document.getElementById('expenseModal').classList.remove('flex');
         }
 
         function saveExpenseRecord() {
             const dateVal = document.getElementById('expenseDate').value;
-            const category = document.getElementById('expenseCategory').value;
+            const flowType = document.getElementById('expenseFlowType')?.value || 'EXPENSE';
+            const category = flowType === 'EXPENSE'
+                ? document.getElementById('expenseCategory').value
+                : (flowType === 'CAPITAL_IN' ? 'Modal Pemilik' : 'Ambilan Pemilik');
             const amount = parseFloat(document.getElementById('expenseAmount').value) || 0;
-            const title = document.getElementById('expenseTitle').value.trim() || 'Perbelanjaan Am';
+            const title = document.getElementById('expenseTitle').value.trim() ||
+                (flowType === 'CAPITAL_IN' ? 'Modal Pemilik' :
+                 flowType === 'OWNER_DRAW' ? 'Ambilan Pemilik' : 'Perbelanjaan Am');
 
             if (!dateVal) {
-                alert('Sila pilih tarikh perbelanjaan.');
+                alert('Sila pilih tarikh.');
                 return;
             }
 
             if (amount <= 0) {
-                alert('Sila masukkan jumlah tunai keluar yang sah.');
+                alert('Sila masukkan jumlah yang sah.');
                 return;
             }
 
@@ -2935,6 +3060,7 @@
                 id: 'EXP-' + Date.now(),
                 date: expDateObj.toLocaleString('ms-MY'),
                 isoDate: expDateObj.toISOString(),
+                flowType: flowType,
                 category: category,
                 amount: amount,
                 title: title,
@@ -2944,14 +3070,23 @@
             expenseRecords.unshift(expRecord);
             localStorage.setItem('ec_expense_records', JSON.stringify(expenseRecords));
 
+            // Backend lama masih menyimpan rekod ini dalam sheet Perbelanjaan_TunaiKeluar.
+            // flowType/category membezakan modal, ambilan dan belanja.
             secureProxyRequest('saveExpense', { data: JSON.stringify(expRecord) }, function(res) {
                 closeExpenseModal();
                 updateFinancialReports();
-                alert(`Rekod Perbelanjaan RM ${amount.toFixed(2)} (${category}) Berjaya Disimpan!`);
+
+                if (flowType === 'CAPITAL_IN') {
+                    alert(`Modal Pemilik RM ${amount.toFixed(2)} berjaya direkod.`);
+                } else if (flowType === 'OWNER_DRAW') {
+                    alert(`Ambilan Pemilik RM ${amount.toFixed(2)} berjaya direkod.`);
+                } else {
+                    alert(`Rekod Tunai Keluar RM ${amount.toFixed(2)} (${category}) berjaya disimpan.`);
+                }
             }, function(err) {
                 closeExpenseModal();
                 updateFinancialReports();
-                alert(`Perbelanjaan RM ${amount.toFixed(2)} disimpan setempat (Ralat Sync: ${err.message})`);
+                alert(`Rekod disimpan setempat (Ralat Sync: ${err.message})`);
             });
         }
 
@@ -3064,14 +3199,13 @@
                 saveProducts();
                 closeExternalSaleModal();
                 updateFinancialReports();
-                renderProducts();
                 alert(`Berjaya mengimport ${count} jualan pukal terus ke Google Sheet!`);
             };
 
             reader.readAsText(file);
         }
 
-        // ================= INVENTORY MODULE (PERBAIKAN EKSPORT, IMPORT & SIMPAN GSHEET) =================
+        // ================= INVENTORY MODULE =================
         function openInventoryModal() {
             normalizeProducts();
             renderInventoryTable();
@@ -3094,136 +3228,64 @@
             document.getElementById('invStatOut').innerText=out;
             document.getElementById('invStatValue').innerText='RM '+value.toFixed(2);
             const rows=products.filter(p=>{const st=getStockStatus(p); return (!q || `${p.name} ${p.sku} ${p.category}`.toLowerCase().includes(q)) && (filter==='ALL'||filter===st);});
-            body.innerHTML=rows.map(p=>`<tr class="border-t border-greycair-200 hover:bg-greycair-50"><td class="px-3 py-2 text-gold-700 font-semibold">${p.sku}</td><td class="px-3 py-2"><div class="font-semibold text-slate-800">${p.name}</div><div class="text-[10px] text-slate-500">ID: ${p.id}</div></td><td class="px-3 py-2 text-slate-600">${p.category||'-'}</td><td class="px-3 py-2 text-right">RM ${Number(p.price||0).toFixed(2)}</td><td class="px-3 py-2 text-right text-slate-500">RM ${Number(p.cost||0).toFixed(2)}</td><td class="px-3 py-2 text-right font-bold ${p.stock<=0?'text-red-600':p.stock<=p.minStock?'text-amber-600':'text-emerald-600'}">${p.stock}</td><td class="px-3 py-2 text-right text-slate-500">${p.minStock}</td><td class="px-3 py-2 text-center">${statusBadge(p)}</td><td class="px-3 py-2 text-right whitespace-nowrap"><button onclick="openStockActionModal(${p.id},'IN')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">+ Restok</button><button onclick="openStockActionModal(${p.id},'ADJUST')" class="px-2 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded text-[10px] font-semibold">Pelarasan</button></td></tr>`).join('') || '<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Tiada produk ditemui.</td></tr>';
+            body.innerHTML=rows.map(p=>`<tr class="border-t border-greycair-200 hover:bg-greycair-50"><td class="px-3 py-2 text-gold-700 font-semibold">${p.sku}</td><td class="px-3 py-2"><div class="font-semibold text-slate-800">${p.name}</div><div class="text-[10px] text-slate-500">ID: ${p.id}</div></td><td class="px-3 py-2 text-slate-600">${p.category||'-'}</td><td class="px-3 py-2 text-right">RM ${Number(p.price||0).toFixed(2)}</td><td class="px-3 py-2 text-right text-slate-500">RM ${Number(p.cost||0).toFixed(2)}</td><td class="px-3 py-2 text-right font-bold ${p.stock<=0?'text-red-600':p.stock<=p.minStock?'text-amber-600':'text-emerald-600'}">${p.stock}</td><td class="px-3 py-2 text-right text-slate-500">${p.minStock}</td><td class="px-3 py-2 text-center">${statusBadge(p)}</td><td class="px-3 py-2 text-right whitespace-nowrap"><button onclick="openStockActionModal(${p.id},'IN')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">+ Restok</button><button onclick="openStockActionModal(${p.id},'ADJUST')" class="px-2 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded text-[10px] font-semibold mr-1">Pelarasan</button><button onclick="deleteInventoryProduct(this.dataset.productId)" data-product-id="${String(p.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="display:inline-flex;align-items:center;visibility:visible;opacity:1" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold" title="Padam produk daripada inventori"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button></td></tr>`).join('') || '<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Tiada produk ditemui.</td></tr>';
         }
         
-        // FUNGSI SIMPAN INVENTORI KE GOOGLE SHEET
-        function saveProductsToGSheet() {
-            if(!currentUser || currentUser.role !== 'admin') {
-                alert('Akses Dihadkan: Hanya Admin dibenarkan menyimpan inventori ke Google Sheet.');
+        // PADAM PRODUK DARIPADA INVENTORI (ADMIN SAHAJA)
+        // Rekod jualan lama tidak dipadam; pergerakan stok direkodkan untuk audit.
+        function deleteInventoryProduct(productId) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('Akses dihadkan: hanya Admin dibenarkan memadam produk daripada inventori.');
                 return;
             }
 
-            saveSettingsToGSheet('ec_products', products, function() {
-                alert(`Berjaya menyimpan ${products.length} produk inventori ke Google Sheet!`);
-            });
-        }
-
-        // FUNGSI EKSPORT INVENTORI KE FAIL CSV
-        function exportInventoryCSV() {
-            if(products.length === 0) {
-                alert('Tiada data produk untuk dieksport.');
+            const index = products.findIndex(p => String(p.id) === String(productId));
+            if (index < 0) {
+                alert('Produk tidak ditemui dalam inventori.');
                 return;
             }
 
-            let csvContent = "\uFEFF";
-            csvContent += "SKU,NamaProduk,Kategori,HargaJualRM,KosUnitRM,StokSemasa,ParasMinStok,Saiz,Warna,GambarURL\n";
+            const product = products[index];
+            const stockNow = Math.max(0, Number(product.stock) || 0);
+            const confirmText =
+                `Anda pasti mahu memadam produk ini daripada inventori?\n\n` +
+                `Produk: ${product.name}\nSKU: ${product.sku}\nStok semasa: ${stockNow} unit\n\n` +
+                `Tindakan ini tidak boleh dibuat asal. Rekod jualan lama akan dikekalkan.`;
 
-            products.forEach(p => {
-                const sizesStr = (p.sizes || ['Free Size']).join('|');
-                const colorsStr = (p.colors || ['Piawai']).join('|');
-                const row = [
-                    `"${p.sku || ''}"`,
-                    `"${p.name || ''}"`,
-                    `"${p.category || 'Aksesori'}"`,
-                    Number(p.price || 0).toFixed(2),
-                    Number(p.cost || 0).toFixed(2),
-                    Number(p.stock || 0),
-                    Number(p.minStock || 5),
-                    `"${sizesStr}"`,
-                    `"${colorsStr}"`,
-                    `"${p.image || ''}"`
-                ];
-                csvContent += row.join(",") + "\n";
-            });
+            if (!confirm(confirmText)) return;
 
-            downloadCSV(csvContent, `Inventori_EjayCollection_${new Date().toISOString().slice(0,10)}.csv`);
-        }
+            recordStockMovement(
+                product,
+                'DELETE',
+                stockNow,
+                stockNow,
+                0,
+                'Produk dipadam daripada inventori oleh Admin'
+            );
 
-        // FUNGSI IMPORT INVENTORI DARI FAIL CSV
-        function importInventoryCSV(event) {
-            const file = event.target.files[0];
-            if (!file) return;
+            products.splice(index, 1);
+            saveProducts();
+            syncInventoryToGoogleSheet();
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const text = e.target.result;
-                const lines = text.split('\n');
-                let importedCount = 0;
+            // Buang produk daripada troli semasa jika masih ada.
+            if (Array.isArray(cart)) {
+                cart = cart.filter(item => String(item.id) !== String(productId));
+                if (typeof renderCart === 'function') renderCart();
+            }
 
-                for (let i = 1; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (!line) continue;
-
-                    const cols = line.split(',').map(c => c.replace(/"/g, '').trim());
-                    if (cols.length >= 6) {
-                        const sku = cols[0] || ('EC-' + Math.floor(100000 + Math.random() * 900000));
-                        const name = cols[1];
-                        if (!name) continue;
-
-                        const category = cols[2] || 'Aksesori';
-                        const price = parseFloat(cols[3]) || 0;
-                        const cost = parseFloat(cols[4]) || 0;
-                        const stock = parseInt(cols[5]) || 0;
-                        const minStock = parseInt(cols[6]) || 5;
-                        const sizes = cols[7] ? cols[7].split('|').map(s => s.trim()) : ['Free Size'];
-                        const colors = cols[8] ? cols[8].split('|').map(c => c.trim()) : ['Piawai'];
-                        const image = cols[9] || '';
-
-                        const existingIdx = products.findIndex(p => String(p.sku).toLowerCase() === String(sku).toLowerCase());
-
-                        if (existingIdx >= 0) {
-                            products[existingIdx].name = name;
-                            products[existingIdx].category = category;
-                            products[existingIdx].price = price;
-                            products[existingIdx].cost = cost;
-                            products[existingIdx].stock = stock;
-                            products[existingIdx].minStock = minStock;
-                            products[existingIdx].sizes = sizes;
-                            products[existingIdx].colors = colors;
-                            if (image) products[existingIdx].image = image;
-                        } else {
-                            products.push({
-                                id: Date.now() + i,
-                                sku: sku,
-                                name: name,
-                                category: category,
-                                price: price,
-                                cost: cost,
-                                stock: stock,
-                                minStock: minStock,
-                                sizes: sizes,
-                                colors: colors,
-                                image: image,
-                                isManual: true
-                            });
-                        }
-                        importedCount++;
-                    }
-                }
-
-                saveProducts();
-                renderCategoryFilterButtons();
-                renderProducts();
-                renderInventoryTable();
-                populateProductFilterDropdown();
-                populateExternalSaleModalDropdowns();
-
-                alert(`Berjaya mengimport ${importedCount} produk inventori!`);
-                event.target.value = '';
-            };
-
-            reader.readAsText(file);
+            renderCategoryFilterButtons();
+            renderProducts();
+            renderInventoryTable();
+            alert(`Produk "${product.name}" telah dipadam daripada inventori. Rekod jualan terdahulu dikekalkan.`);
         }
 
         // MODAL RESTOK DENGAN VARIASI SAIZ / PERFUME ML & WARNA
         function openStockActionModal(productId, type='IN') {
             const p = products.find(x => String(x.id) === String(productId)); if(!p) return;
             document.getElementById('stockActionProductId').value = p.id;
-            document.getElementById('stockActionProduct').innerText = `${p.name} | ${p.sku} | Stok semasa: ${p.stock}`;
+            document.getElementById('stockActionProduct').innerText = `${p.name} | ${p.sku} | Jumlah stok: ${p.stock}`;
             document.getElementById('stockActionType').value = type;
             document.getElementById('stockActionQty').value = 1;
-            document.getElementById('stockActionNewQty').value = p.stock;
             document.getElementById('stockActionRef').value = '';
 
             // Populasikan Dropdown Saiz / Volume Perfume ml
@@ -3233,9 +3295,12 @@
             // Populasikan Dropdown Warna / Bau
             const colorSelect = document.getElementById('stockActionColor');
             colorSelect.innerHTML = (p.colors && p.colors.length ? p.colors : ['Piawai']).map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('stockActionNewQty').value = getVariantStock(p, sizeSelect.value, colorSelect.value);
 
             toggleStockActionFields();
-            document.getElementById('stockActionModal').classList.remove('hidden'); 
+            sizeSelect.onchange = () => { document.getElementById('stockActionNewQty').value = getVariantStock(p, sizeSelect.value, colorSelect.value); };
+            colorSelect.onchange = () => { document.getElementById('stockActionNewQty').value = getVariantStock(p, sizeSelect.value, colorSelect.value); };
+            document.getElementById('stockActionModal').classList.remove('hidden');
             document.getElementById('stockActionModal').classList.add('flex');
         }
 
@@ -3259,24 +3324,25 @@
             const sizeVal = document.getElementById('stockActionSize').value;
             const colorVal = document.getElementById('stockActionColor').value;
             const userRef = document.getElementById('stockActionRef').value.trim();
-            const before = Number(p.stock) || 0;
-
+            initializeVariantStocks(p, sizeVal, colorVal);
+            const vKey = variantStockKey(sizeVal, colorVal);
+            const before = Math.max(0, Number(p.variantStocks[vKey]) || 0);
             const fullRef = `${userRef ? userRef + ' ' : ''}(Variasi: ${sizeVal}/${colorVal})`;
-
             let after = before, qty = 0;
             if(type === 'ADJUST') {
                 after = Math.max(0, parseInt(document.getElementById('stockActionNewQty').value) || 0);
                 qty = Math.abs(after - before);
             } else {
-                qty = Math.max(0, parseInt(document.getElementById('stockActionQty').value) || 0); 
-                after = type === 'IN' ? before + qty : before - qty; 
-                if(after < 0){ alert(`Stok tidak mencukupi. Stok semasa: ${before}.`); return; }
+                qty = Math.max(0, parseInt(document.getElementById('stockActionQty').value) || 0);
+                after = type === 'IN' ? before + qty : before - qty;
+                if(after < 0){ alert(`Stok tidak mencukupi untuk ${sizeVal}/${colorVal}. Stok semasa: ${before}.`); return; }
             }
-
-            p.stock = after; 
-            recordStockMovement(p, type, qty, before, after, fullRef); 
+            p.variantStocks[vKey] = after;
+            p.stock = getVariantStockTotal(p);
+            recordStockMovement(p, type, qty, before, after, fullRef);
             saveProducts();
-            closeStockActionModal(); 
+            syncInventoryToGoogleSheet();
+            closeStockActionModal();
             renderInventoryTable(); 
             renderProducts(); 
             alert(`Restok ${p.name} [${sizeVal}/${colorVal}] berjaya: Stok ${before} → ${after}.`);
@@ -3299,12 +3365,12 @@
             if(products.some(p=>String(p.sku).toLowerCase()===sku.toLowerCase())){alert('SKU tersebut sudah digunakan.');return;}
             const stock=Math.max(0,parseInt(document.getElementById('newProdStock').value)||0),id=Date.now();
             const p={id,name,sku,category:document.getElementById('newProdCategory').value.trim()||'Aksesori',price:parseFloat(document.getElementById('newProdPrice').value)||0,cost:parseFloat(document.getElementById('newProdCost').value)||0,stock,minStock:Math.max(0,parseInt(document.getElementById('newProdMinStock').value)||0),image:document.getElementById('newProdImage').value.trim(),sizes:document.getElementById('newProdSizes').value.split(',').map(x=>x.trim()).filter(Boolean),colors:document.getElementById('newProdColors').value.split(',').map(x=>x.trim()).filter(Boolean), isManual: true};
-            products.push(p); saveProducts(); if(stock>0)recordStockMovement(p,'IN',stock,0,stock,'Stok awal / produk baharu'); closeAddProductModal();renderCategoryFilterButtons();renderProducts();renderInventoryTable();alert(`Produk ${name} berjaya ditambah.`);
+            products.push(p); saveProducts(); if(stock>0)recordStockMovement(p,'IN',stock,0,stock,'Stok awal / produk baharu'); syncInventoryToGoogleSheet(); closeAddProductModal();renderCategoryFilterButtons();renderProducts();renderInventoryTable();alert(`Produk ${name} berjaya ditambah.`);
         }
 
         function openStockMovementModal(){
             const body=document.getElementById('stockMovementBody');
-            body.innerHTML=stockMovements.slice(0,300).map(m=>`<tr class="border-t border-greycair-200"><td class="px-3 py-2 text-slate-500">${new Date(m.date).toLocaleString('ms-MY')}</td><td class="px-3 py-2 text-gold-700 font-semibold">${m.sku}</td><td class="px-3 py-2 font-semibold text-slate-800">${m.productName}</td><td class="px-3 py-2 text-center"><span class="px-2 py-0.5 rounded font-bold ${m.type==='IN'?'bg-emerald-100 text-emerald-700':m.type==='OUT'?'bg-red-100 text-red-700':'bg-amber-100 text-amber-700'}">${m.type}</span></td><td class="px-3 py-2 text-right font-bold text-slate-800">${m.qty}</td><td class="px-3 py-2 text-right text-slate-500">${m.before}</td><td class="px-3 py-2 text-right text-slate-800 font-semibold">${m.after}</td><td class="px-3 py-2 text-slate-600">${m.reference||'-'}</td><td class="px-3 py-2 text-slate-600">${m.staff||'-'}</td></tr>`).join('')||'<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Belum ada pergerakan stok.</td></tr>';
+            body.innerHTML=stockMovements.slice(0,300).map(m=>`<tr class="border-t border-greycair-200"><td class="px-3 py-2 text-slate-500">${new Date(m.date).toLocaleString('ms-MY')}</td><td class="px-3 py-2 text-gold-700 font-semibold">${m.sku}</td><td class="px-3 py-2 font-semibold text-slate-800">${m.productName}</td><td class="px-3 py-2 text-center"><span class="px-2 py-0.5 rounded font-bold ${m.type==='IN'?'bg-emerald-100 text-emerald-700':m.type==='OUT'||m.type==='DELETE'?'bg-red-100 text-red-700':'bg-amber-100 text-amber-700'}">${m.type}</span></td><td class="px-3 py-2 text-right font-bold text-slate-800">${m.qty}</td><td class="px-3 py-2 text-right text-slate-500">${m.before}</td><td class="px-3 py-2 text-right text-slate-800 font-semibold">${m.after}</td><td class="px-3 py-2 text-slate-600">${m.reference||'-'}</td><td class="px-3 py-2 text-slate-600">${m.staff||'-'}</td></tr>`).join('')||'<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Belum ada pergerakan stok.</td></tr>';
             document.getElementById('stockMovementModal').classList.remove('hidden');document.getElementById('stockMovementModal').classList.add('flex');
         }
         function closeStockMovementModal(){document.getElementById('stockMovementModal').classList.add('hidden');document.getElementById('stockMovementModal').classList.remove('flex');}
@@ -3424,14 +3490,6 @@
                 if (settings.adminAccount && settings.adminAccount.pass) {
                     adminAccount = settings.adminAccount;
                 }
-                if (settings.ec_products && Array.isArray(settings.ec_products)) {
-                    products = settings.ec_products;
-                    saveProducts();
-                    renderCategoryFilterButtons();
-                    renderProducts();
-                    populateProductFilterDropdown();
-                    populateExternalSaleModalDropdowns();
-                }
             }, function(err) {
                 console.warn('Gagal memuat turun tetapan dari Google Sheet:', err.message);
             });
@@ -3492,8 +3550,10 @@
                         wcManageStock: !!p.manage_stock
                     }));
 
+                    // Kekalkan produk tempatan manual yang ditambah oleh user (seperti Delivery Lalamove/J&T)
                     const manualLocalProducts = products.filter(p => p.isManual || !p.sku.startsWith('WC-'));
 
+                    // Gabung WooCommerce + Local Manual tanpa duplikasi
                     const mergedMap = new Map();
                     fetchedWcProducts.forEach(p => mergedMap.set(String(p.sku).toLowerCase(), p));
                     manualLocalProducts.forEach(p => {
@@ -3510,6 +3570,7 @@
                     populateProductFilterDropdown();
                     populateExternalSaleModalDropdowns();
                     saveProducts();
+                    syncInventoryToGoogleSheet();
                     alert(`Berjaya menyegerakkan ${data.length} produk dari WooCommerce dan mengekalkan item inventori tempatan!`);
                 } else {
                     alert('Sambungan berjaya tetapi tiada produk diterima daripada WooCommerce.');
@@ -3802,7 +3863,9 @@
             document.getElementById('reportNetSalesHeader').innerText = `RM ${netSales.toFixed(2)}`;
             document.getElementById('reportTotalOrders').innerText = totalOrders;
 
-            // KIRAAN UNTUNG RUGI (P&L) FOR SELECTED MONTH
+            // ==========================================
+            // 1. KIRAAN UNTUNG RUGI (P&L) FOR SELECTED MONTH
+            // ==========================================
             const pnlSales = salesHistory.filter(tx => {
                 if(!pnlMonth) return true;
                 return parseYearMonth(tx.isoDate || tx.date) === pnlMonth;
@@ -3834,7 +3897,32 @@
 
             let pnlNetSales = pnlGrossSales - pnlDiscounts;
             let pnlGrossProfit = pnlNetSales - pnlCogs;
-            let pnlExpensesTotal = pnlExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            // Hanya flowType=EXPENSE masuk ke Untung Rugi.
+            // Modal masuk dan ambilan pemilik ialah transaksi ekuiti, bukan hasil/belanja.
+            // Kos pengeluaran/inventori pula tidak menjadi belanja operasi;
+            // kos produk sebenar masuk melalui COGS berdasarkan cost produk yang terjual.
+            const pnlOperatingExpensesList = pnlExpensesList.filter(exp => {
+                const flow = String(exp.flowType || 'EXPENSE').toUpperCase();
+                if (flow !== 'EXPENSE') return false;
+
+                const cat = String(exp.category || '').toLowerCase();
+                const isProductionOrInventory =
+                    cat.includes('kain') ||
+                    cat.includes('tekstil') ||
+                    cat.includes('jahit') ||
+                    cat.includes('butang') ||
+                    cat.includes('zip') ||
+                    cat.includes('aksesori') ||
+                    cat.includes('label') ||
+                    cat.includes('tag produk') ||
+                    cat.includes('packaging produk') ||
+                    cat.includes('restok') ||
+                    cat.includes('inventori') ||
+                    cat.includes('stok');
+
+                return !isProductionOrInventory;
+            });
+            let pnlExpensesTotal = pnlOperatingExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
             let pnlNetProfit = pnlGrossProfit - pnlExpensesTotal;
 
             // Render ke UI P&L
@@ -3846,7 +3934,9 @@
             document.getElementById('pnlExpenses').innerText = `(RM ${pnlExpensesTotal.toFixed(2)})`;
             document.getElementById('pnlNetProfit').innerText = `RM ${pnlNetProfit.toFixed(2)}`;
 
-            // KIRAAN ALIRAN TUNAI (CASHFLOW) FOR SELECTED MONTH
+            // ==========================================
+            // 2. KIRAAN ALIRAN TUNAI (CASHFLOW) FOR SELECTED MONTH
+            // ==========================================
             const cfSales = salesHistory.filter(tx => {
                 if(!cashflowMonth) return true;
                 return parseYearMonth(tx.isoDate || tx.date) === cashflowMonth;
@@ -3909,60 +3999,192 @@
             document.getElementById('cfTotalOutflow').innerText = `(RM ${cfTotalOutflow.toFixed(2)})`;
             document.getElementById('cfNetCashflow').innerText = `RM ${cfNetCashflow.toFixed(2)}`;
 
-            // KUNCI KIRA-KIRA (BALANCE SHEET) AS AT END OF MONTH
+            // ==========================================
+            // 3. KUNCI KIRA-KIRA (BALANCE SHEET) AS AT END OF MONTH
+            // LOGIK DIBETULKAN:
+            // - Tunai = semua jualan diterima - semua tunai keluar
+            // - Inventori = stok akhir x kos
+            // - Untung terkumpul = untung bersih KUMULATIF hingga tarikh BS
+            // - Restok TIDAK dianggap belanja operasi dalam P&L
+            // - Modal ialah baki ekuiti selepas mengambil kira untung terkumpul
+            // ==========================================
             const bsSales = salesHistory.filter(tx => {
                 if(!balanceMonth) return true;
                 return parseYearMonth(tx.isoDate || tx.date) <= balanceMonth;
             });
 
-            const bsExpensesList = expenseRecords.filter(exp => {
+            const bsFlowsList = expenseRecords.filter(exp => {
                 if(!balanceMonth) return true;
                 return parseYearMonth(exp.isoDate || exp.date) <= balanceMonth;
             });
 
-            let bsInflowTotal = bsSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
-            let bsOutflowTotal = bsExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
-            let bsCashBank = bsInflowTotal - bsOutflowTotal;
+            // Aliran tunai:
+            // jualan + modal masuk - semua tunai keluar - ambilan pemilik.
+            const bsSalesInflow = bsSales.reduce((sum, tx) => sum + Number(tx.grandTotal || 0), 0);
+            const bsCapitalInflow = bsFlowsList
+                .filter(exp => exp.flowType === 'CAPITAL_IN')
+                .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
 
-            // Kirakan Nilai Stok Akhir Bersejarah
+            const bsExpenseOutflow = bsFlowsList
+                .filter(exp => exp.flowType === 'EXPENSE')
+                .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
+            const bsOwnerDrawOutflow = bsFlowsList
+                .filter(exp => exp.flowType === 'OWNER_DRAW')
+                .reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+
+            let bsCashBank =
+                bsSalesInflow +
+                bsCapitalInflow -
+                bsExpenseOutflow -
+                bsOwnerDrawOutflow;
+
+            // Nilai stok akhir bersejarah pada kos.
             let historicalInventoryValue = 0;
             if (!balanceMonth) {
-                historicalInventoryValue = products.reduce((sum, p) => sum + (Number(p.stock || 0) * (Number(p.cost) || Number(p.price) * 0.5)), 0);
+                historicalInventoryValue = products.reduce((sum, p) => {
+                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : Number(p.price || 0) * 0.5;
+                    return sum + (Number(p.stock || 0) * costPrice);
+                }, 0);
             } else {
                 const [bYear, bMonth] = balanceMonth.split('-').map(Number);
                 const endOfSelectedMonth = new Date(bYear, bMonth, 0, 23, 59, 59, 999);
 
                 products.forEach(p => {
-                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : (Number(p.price) * 0.5);
+                    const costPrice = Number(p.cost) > 0 ? Number(p.cost) : Number(p.price || 0) * 0.5;
                     let productHistoricalStock = Number(p.stock || 0);
 
                     stockMovements.forEach(m => {
-                        if (String(m.productId) === String(p.id) || String(m.sku).toLowerCase() === String(p.sku).toLowerCase()) {
+                        const sameProduct =
+                            String(m.productId) === String(p.id) ||
+                            (String(m.sku || '').toLowerCase() === String(p.sku || '').toLowerCase());
+
+                        if (sameProduct) {
                             const mDate = new Date(m.date);
-                            if (mDate > endOfSelectedMonth) {
+                            if (!isNaN(mDate.getTime()) && mDate > endOfSelectedMonth) {
                                 const qty = Number(m.qty || 0);
                                 if (m.type === 'IN') productHistoricalStock -= qty;
                                 else if (m.type === 'OUT') productHistoricalStock += qty;
-                                else if (m.type === 'ADJUST') productHistoricalStock -= (Number(m.after) - Number(m.before));
+                                else if (m.type === 'ADJUST') {
+                                    productHistoricalStock -= (Number(m.after || 0) - Number(m.before || 0));
+                                }
                             }
                         }
                     });
-                    historicalInventoryValue += (Math.max(0, productHistoricalStock) * costPrice);
+
+                    historicalInventoryValue += Math.max(0, productHistoricalStock) * costPrice;
                 });
             }
 
-            // Aset & Ekuiti
-            let totalAssets = bsCashBank + historicalInventoryValue;
-            let bsRetainedEarnings = pnlNetProfit; 
-            let bsEquityCapital = totalAssets - bsRetainedEarnings;
+            // Untung terkumpul = keuntungan bersih kumulatif.
+            // Modal bersih = semua modal masuk - semua ambilan pemilik.
+            let bsGrossSales = 0;
+            let bsDiscounts = 0;
+            let bsCogs = 0;
+
+            bsSales.forEach(tx => {
+                bsGrossSales += Number(tx.subtotal || tx.grandTotal || 0);
+                bsDiscounts += Number(tx.discount || 0);
+
+                (tx.items || []).forEach(i => {
+                    let costPrice = Number(i.cost || 0);
+
+                    if (!costPrice) {
+                        const originalP = products.find(p => String(p.id) === String(i.id));
+                        if (originalP) costPrice = Number(originalP.cost || 0);
+                    }
+
+                    if (!costPrice) costPrice = Number(i.price || 0) * 0.5;
+                    bsCogs += costPrice * Number(i.qty || 1);
+                });
+            });
+
+            const bsOperatingExpenses = bsFlowsList.filter(exp => {
+                const flow = String(exp.flowType || 'EXPENSE').toUpperCase();
+                if (flow !== 'EXPENSE') return false;
+
+                const cat = String(exp.category || '').toLowerCase();
+
+                return !(
+                    cat.includes('kain') ||
+                    cat.includes('tekstil') ||
+                    cat.includes('jahit') ||
+                    cat.includes('butang') ||
+                    cat.includes('zip') ||
+                    cat.includes('aksesori') ||
+                    cat.includes('label') ||
+                    cat.includes('tag produk') ||
+                    cat.includes('packaging produk') ||
+                    cat.includes('restok') ||
+                    cat.includes('inventori') ||
+                    cat.includes('stok')
+                );
+            });
+
+            const bsOperatingExpensesTotal = bsOperatingExpenses.reduce(
+                (sum, exp) => sum + Number(exp.amount || 0), 0
+            );
+
+            const bsNetSales = bsGrossSales - bsDiscounts;
+            const bsGrossProfit = bsNetSales - bsCogs;
+            const bsRetainedEarnings = bsGrossProfit - bsOperatingExpensesTotal;
+
+            // Liabiliti masih 0 kerana sistem asal belum mempunyai ledger hutang.
+            const bsCurrentLiabilities = 0;
+
+            const bsNetOwnerCapital =
+                bsCapitalInflow -
+                bsOwnerDrawOutflow;
+
+            const totalAssets = bsCashBank + historicalInventoryValue;
+
+            // Ekuiti pemilik terdiri daripada modal bersih + untung terkumpul.
+            // Jika data lama belum mempunyai rekod modal awal, sistem buat
+            // "modal pembukaan / pelarasan sejarah" sebagai baki supaya
+            // Kunci Kira-Kira tidak dipaksa menggunakan nilai stok sebagai modal.
+            const calculatedEquityBeforeOpening =
+                bsNetOwnerCapital + bsRetainedEarnings;
+
+            const openingEquityAdjustment =
+                totalAssets -
+                bsCurrentLiabilities -
+                calculatedEquityBeforeOpening;
+
+            const bsEquityCapital =
+                bsNetOwnerCapital +
+                openingEquityAdjustment;
+
+            const totalLiabilitiesEquity =
+                bsCurrentLiabilities +
+                bsEquityCapital +
+                bsRetainedEarnings;
+
+            const balanceDifference = totalAssets - totalLiabilitiesEquity;
 
             // Render ke UI Kunci Kira-Kira
             document.getElementById('bsCashBank').innerText = `RM ${bsCashBank.toFixed(2)}`;
             document.getElementById('bsInventory').innerText = `RM ${historicalInventoryValue.toFixed(2)}`;
             document.getElementById('bsTotalAssets').innerText = `RM ${totalAssets.toFixed(2)}`;
+            document.getElementById('bsCurrentLiabilities').innerText = `RM ${bsCurrentLiabilities.toFixed(2)}`;
             document.getElementById('bsEquityCapital').innerText = `RM ${bsEquityCapital.toFixed(2)}`;
             document.getElementById('bsRetainedEarnings').innerText = `RM ${bsRetainedEarnings.toFixed(2)}`;
-            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${(bsEquityCapital + bsRetainedEarnings).toFixed(2)}`;
+            document.getElementById('bsTotalLiabilitiesEquity').innerText = `RM ${totalLiabilitiesEquity.toFixed(2)}`;
+
+            const bsStatus = document.getElementById('bsBalanceStatus');
+            if (bsStatus) {
+                if (Math.abs(balanceDifference) < 0.01) {
+                    bsStatus.className = 'mt-3 p-2 rounded text-center text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                    bsStatus.innerText = '✓ KUNCI KIRA-KIRA SEIMBANG';
+                } else {
+                    bsStatus.className = 'mt-3 p-2 rounded text-center text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200';
+                    bsStatus.innerText = `⚠ TIDAK SEIMBANG: RM ${Math.abs(balanceDifference).toFixed(2)}`;
+                }
+            }
+
+            // Nota ringkas untuk elak kekeliruan:
+            // Modal Pemilik = modal masuk bersih + pelarasan modal pembukaan bagi rekod sejarah.
+            // Nilai inventori tidak lagi digunakan sebagai modal.
+
         }
 
         function exportTransactionsCSV() {
