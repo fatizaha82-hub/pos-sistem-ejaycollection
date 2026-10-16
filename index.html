@@ -4239,12 +4239,13 @@
     </script>
 
 <!-- ============================================================
-     KEMAS KINI HTML UNTUK BACKEND BAHARU
-     - Stok ikut Produk + Saiz + Warna
-     - variationStock format: { "Saiz|Warna": kuantiti }
-     - Import / Eksport CSV Inventori
+     KEMAS KINI HTML - SERASI BACKEND Code.gs ASAL YANG DIKEMASKINI
+     - Sync Web: produk WooCommerce menggantikan inventori web
+     - Produk manual tempatan dikekalkan
+     - Stok variasi: { "Saiz|Warna": kuantiti }
+     - Import / Eksport CSV
      - Invois Ejen / Stokis
-     - Butang Delete Inventori dikekalkan
+     - Footer resit boleh diedit
      ============================================================ -->
 <div id="invoiceModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden items-center justify-center p-4">
   <div class="bg-white border border-purple-500/40 w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[94vh]">
@@ -4255,89 +4256,35 @@
       </div>
       <button onclick="closeInvoiceModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
     </div>
-
     <div class="p-5 overflow-y-auto space-y-4">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Penerima</label>
-          <select id="invoiceRecipientType" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs">
-            <option value="Ejen">Ejen</option>
-            <option value="Stokis">Stokis</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Ejen / Stokis</label>
-          <input id="invoiceAgentName" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs" placeholder="Nama penerima">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">No. Telefon</label>
-          <input id="invoiceAgentPhone" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs" placeholder="No. telefon">
-        </div>
-        <div class="md:col-span-2">
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat</label>
-          <input id="invoiceAgentAddress" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs" placeholder="Alamat penerima">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Tarikh Matang</label>
-          <input type="date" id="invoiceDueDate" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs">
-        </div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Penerima</label><select id="invoiceRecipientType" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs"><option value="Ejen">Ejen</option><option value="Stokis">Stokis</option></select></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1">Nama Ejen / Stokis</label><input id="invoiceAgentName" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs" placeholder="Nama penerima"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1">No. Telefon</label><input id="invoiceAgentPhone" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs" placeholder="No. telefon"></div>
+        <div class="md:col-span-2"><label class="block text-xs font-semibold text-slate-700 mb-1">Alamat</label><input id="invoiceAgentAddress" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs" placeholder="Alamat penerima"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1">Tarikh Matang</label><input type="date" id="invoiceDueDate" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs"></div>
       </div>
-
       <div class="overflow-x-auto border border-greycair-200 rounded-xl">
         <table class="w-full text-xs text-slate-700">
-          <thead class="bg-greycair-100 uppercase font-bold border-b border-greycair-200">
-            <tr>
-              <th class="text-left px-3 py-2">Produk</th>
-              <th class="text-left px-3 py-2">Saiz</th>
-              <th class="text-left px-3 py-2">Warna</th>
-              <th class="text-center px-3 py-2">Kuantiti</th>
-              <th class="text-right px-3 py-2">Harga Seunit</th>
-              <th class="text-right px-3 py-2">Jumlah</th>
-            </tr>
-          </thead>
+          <thead class="bg-greycair-100 uppercase font-bold border-b border-greycair-200"><tr><th class="text-left px-3 py-2">Produk</th><th class="text-left px-3 py-2">Saiz</th><th class="text-left px-3 py-2">Warna</th><th class="text-center px-3 py-2">Kuantiti</th><th class="text-right px-3 py-2">Harga Seunit</th><th class="text-right px-3 py-2">Jumlah</th></tr></thead>
           <tbody id="invoiceItemsBody" class="divide-y divide-greycair-200"></tbody>
         </table>
       </div>
-
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Diskaun (RM)</label>
-          <input type="number" id="invoiceDiscount" min="0" step="0.01" value="0" oninput="calculateInvoiceTotals()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Bayaran Diterima (RM)</label>
-          <input type="number" id="invoicePaidAmount" min="0" step="0.01" value="0" oninput="calculateInvoiceTotals()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs">
-        </div>
-        <div class="flex items-end">
-          <label class="flex items-center gap-2 text-xs font-semibold text-slate-700">
-            <input type="checkbox" id="invoiceDeductStock" checked class="accent-purple-600">
-            Tolak stok variasi
-          </label>
-        </div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1">Diskaun (RM)</label><input type="number" id="invoiceDiscount" min="0" step="0.01" value="0" oninput="calculateInvoiceTotals()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs"></div>
+        <div><label class="block text-xs font-semibold text-slate-700 mb-1">Bayaran Diterima (RM)</label><input type="number" id="invoicePaidAmount" min="0" step="0.01" value="0" oninput="calculateInvoiceTotals()" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs"></div>
+        <div class="flex items-end"><label class="flex items-center gap-2 text-xs font-semibold text-slate-700"><input type="checkbox" id="invoiceDeductStock" checked class="accent-purple-600"> Tolak stok variasi</label></div>
       </div>
-
-      <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs font-bold text-purple-800" id="invoiceTotalsText">
-        Subtotal: RM 0.00 | Diskaun: RM 0.00 | Jumlah: RM 0.00 | Baki: RM 0.00
-      </div>
-
+      <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs font-bold text-purple-800" id="invoiceTotalsText">Subtotal: RM 0.00 | Diskaun: RM 0.00 | Jumlah: RM 0.00 | Baki: RM 0.00</div>
       <div class="flex justify-end gap-2">
         <button onclick="closeInvoiceModal()" class="px-4 py-2 bg-greycair-200 text-slate-700 rounded text-xs font-semibold">Tutup</button>
-        <button id="saveInvoiceBtn" onclick="saveInvoice()" class="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs font-bold">Simpan &amp; Papar Invois</button>
+        <button id="saveInvoiceBtn" onclick="saveInvoice()" class="px-4 py-2 bg-purple-700 hover:bg-purple-600 text-white rounded text-xs font-bold">Simpan & Papar Invois</button>
       </div>
-
       <div>
         <h4 class="text-xs font-bold text-slate-700 uppercase mb-2">Sejarah Invois</h4>
         <div class="overflow-x-auto border border-greycair-200 rounded-xl">
           <table class="w-full text-xs text-slate-700">
-            <thead class="bg-greycair-100 uppercase font-bold border-b border-greycair-200">
-              <tr>
-                <th class="text-left px-3 py-2">No. Invois</th>
-                <th class="text-left px-3 py-2">Penerima</th>
-                <th class="text-right px-3 py-2">Jumlah</th>
-                <th class="text-left px-3 py-2">Status</th>
-                <th class="text-center px-3 py-2">Tindakan</th>
-              </tr>
-            </thead>
+            <thead class="bg-greycair-100 uppercase font-bold border-b border-greycair-200"><tr><th class="text-left px-3 py-2">No. Invois</th><th class="text-left px-3 py-2">Penerima</th><th class="text-right px-3 py-2">Jumlah</th><th class="text-left px-3 py-2">Status</th><th class="text-center px-3 py-2">Tindakan</th></tr></thead>
             <tbody id="invoiceHistoryBody" class="divide-y divide-greycair-200"></tbody>
           </table>
         </div>
@@ -4345,974 +4292,333 @@
     </div>
   </div>
 </div>
-
 <div id="invoicePrintArea" class="hidden"></div>
-
 <script>
-/* ============================================================
-   1. UTILITI STOK VARIASI
-   ============================================================ */
-function variantKey(size, color) {
-  return String(size || 'Free Size') + '|' + String(color || 'Piawai');
-}
+/* ===== STOK VARIASI ===== */
+function variantKey(size,color){return String(size||'Free Size')+'|'+String(color||'Piawai');}
+function getVariantStock(p,size,color){if(!p)return 0;p.variationStock=p.variationStock||{};return Math.max(0,Number(p.variationStock[variantKey(size,color)]||0));}
+function setVariantStock(p,size,color,qty){p.variationStock=p.variationStock||{};p.variationStock[variantKey(size,color)]=Math.max(0,Math.floor(Number(qty||0)));recalcProductStock(p);}
+function recalcProductStock(p){const allocated=Object.keys(p.variationStock||{}).reduce((n,k)=>n+Number(p.variationStock[k]||0),0);p.unallocatedStock=Math.max(0,Math.floor(Number(p.unallocatedStock||0)));p.stock=allocated+p.unallocatedStock;return p;}
 
-function getProductVariantStock(product, size, color) {
-  if (!product) return 0;
-  product.variationStock = product.variationStock || {};
-  return Math.max(0, Number(product.variationStock[variantKey(size, color)] || 0));
-}
-
-function setProductVariantStock(product, size, color, qty) {
-  product.variationStock = product.variationStock || {};
-  product.variationStock[variantKey(size, color)] = Math.max(0, Math.floor(Number(qty || 0)));
-  recalculateProductStock(product);
-}
-
-function recalculateProductStock(product) {
-  const allocated = Object.keys(product.variationStock || {}).reduce(function(total, key) {
-    return total + Number(product.variationStock[key] || 0);
-  }, 0);
-
-  product.unallocatedStock = Math.max(0, Math.floor(Number(product.unallocatedStock || 0)));
-  product.stock = allocated + product.unallocatedStock;
-  return product;
-}
-
-/* ============================================================
-   2. NORMALIZE PRODUK - KEKALKAN FUNGSI ASAL, TAMBAH VARIASI
-   ============================================================ */
-const originalNormalizeProducts = normalizeProducts;
-
-normalizeProducts = function() {
-  products = products.map(function(p, idx) {
-    const priceVal = Number(p.price ?? 0);
-    const costVal = Number(p.cost ?? 0);
-    const finalCost = costVal > 0 ? costVal : (priceVal > 0 ? priceVal * 0.5 : 0);
-
-    p.sku = p.sku || ('EC-' + String(p.id || idx + 1).padStart(4, '0'));
-    p.price = priceVal;
-    p.cost = finalCost;
-    p.minStock = Number(p.minStock ?? 5);
-    p.sizes = p.sizes && p.sizes.length ? p.sizes : (String(p.category || '').toLowerCase().includes('perfume') ? ['30ml', '50ml', '100ml'] : ['Free Size']);
-    p.colors = p.colors && p.colors.length ? p.colors : ['Piawai'];
-    p.variationStock = p.variationStock && typeof p.variationStock === 'object' ? p.variationStock : {};
-
-    let allocated = 0;
-    Object.keys(p.variationStock).forEach(function(key) {
-      p.variationStock[key] = Math.max(0, Math.floor(Number(p.variationStock[key] || 0)));
-      allocated += p.variationStock[key];
-    });
-
-    p.unallocatedStock = Math.max(0, Math.floor(Number(p.unallocatedStock || 0)));
-
-    // Data lama: jika tiada variasi tetapi ada stok, simpan sebagai belum diagih.
-    if (!allocated && !p.unallocatedStock) {
-      p.unallocatedStock = Math.max(0, Math.floor(Number(p.stock || 0)));
-    }
-
-    return recalculateProductStock(p);
+/* ===== NORMALIZE ===== */
+const __originalNormalizeProducts=normalizeProducts;
+normalizeProducts=function(){
+  products=products.map(function(p,idx){
+    const price=Number(p.price??0),cost=Number(p.cost??0);
+    p.sku=p.sku||('EC-'+String(p.id||idx+1).padStart(4,'0'));
+    p.price=price;p.cost=cost>0?cost:(price>0?price*0.5:0);
+    p.minStock=Number(p.minStock??5);
+    p.sizes=p.sizes&&p.sizes.length?p.sizes:(String(p.category||'').toLowerCase().includes('perfume')?['30ml','50ml','100ml']:['Free Size']);
+    p.colors=p.colors&&p.colors.length?p.colors:['Piawai'];
+    p.variationStock=p.variationStock&&typeof p.variationStock==='object'?p.variationStock:{};
+    let allocated=0;
+    Object.keys(p.variationStock).forEach(function(k){p.variationStock[k]=Math.max(0,Math.floor(Number(p.variationStock[k]||0)));allocated+=p.variationStock[k];});
+    p.unallocatedStock=Math.max(0,Math.floor(Number(p.unallocatedStock||0)));
+    if(!allocated&&!p.unallocatedStock)p.unallocatedStock=Math.max(0,Math.floor(Number(p.stock||0)));
+    return recalcProductStock(p);
   });
-
   saveProducts();
 };
 
-/* ============================================================
-   3. MUAT INVENTORI GOOGLE SHEET
-   ============================================================ */
-function loadInventoryFromGoogleSheet(callback) {
-  secureProxyRequest('getInventory', {}, function(result) {
-    if (result && Array.isArray(result.inventory)) {
-      products = result.inventory.map(function(item) {
-        return {
-          id: item.id,
-          sku: item.sku,
-          name: item.name,
-          category: item.category || 'Aksesori',
-          price: Number(item.price || 0),
-          cost: Number(item.cost || 0),
-          minStock: Number(item.minStock || 5),
-          image: item.image || '',
-          sizes: Array.isArray(item.sizes) && item.sizes.length ? item.sizes : ['Free Size'],
-          colors: Array.isArray(item.colors) && item.colors.length ? item.colors : ['Piawai'],
-          variationStock: item.variationStock || {},
-          unallocatedStock: Number(item.unallocatedStock || 0),
-          stock: Number(item.stock || 0)
-        };
+/* ===== MUAT INVENTORI ===== */
+function loadInventoryFromGoogleSheet(callback){
+  secureProxyRequest('getInventory',{},function(result){
+    if(result&&Array.isArray(result.inventory)){
+      products=result.inventory.map(function(item){
+        return {id:item.id,sku:item.sku,name:item.name,category:item.category||'Aksesori',price:Number(item.price||0),cost:Number(item.cost||0),minStock:Number(item.minStock||5),image:item.image||'',sizes:Array.isArray(item.sizes)&&item.sizes.length?item.sizes:['Free Size'],colors:Array.isArray(item.colors)&&item.colors.length?item.colors:['Piawai'],variationStock:item.variationStock||{},unallocatedStock:Number(item.unallocatedStock||0),stock:Number(item.stock||0)};
       });
-
       normalizeProducts();
-      renderCategoryFilterButtons();
-      renderProducts();
-      renderInventoryTable();
-      populateProductFilterDropdown();
-      populateExternalSaleModalDropdowns();
+      renderCategoryFilterButtons();renderProducts();renderInventoryTable();populateProductFilterDropdown();populateExternalSaleModalDropdowns();
     }
-
-    if (typeof callback === 'function') callback(result);
-  }, function(err) {
-    alert('Gagal memuat inventori Google Sheet: ' + err.message);
-    if (typeof callback === 'function') callback(null);
-  });
+    if(typeof callback==='function')callback(result);
+  },function(err){alert('Gagal memuat inventori Google Sheet: '+err.message);if(typeof callback==='function')callback(null);});
 }
 
-/* ============================================================
-   4. PAPARAN STOK MENGIKUT SAIZ + WARNA
-   ============================================================ */
-showSelectedProductStock = function(productId) {
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-  const stockEl = document.getElementById('selected_stock_' + productId);
-  if (!product || !stockEl) return;
-
-  const sizeSelect = document.getElementById('size_select_' + productId);
-  const colorSelect = document.getElementById('color_select_' + productId);
-  const size = sizeSelect ? sizeSelect.value : (product.sizes[0] || 'Free Size');
-  const color = colorSelect ? colorSelect.value : (product.colors[0] || 'Piawai');
-
-  const stock = getProductVariantStock(product, size, color);
-  const inCart = cart.filter(function(item) {
-    return String(item.id) === String(productId) && item.size === size && item.color === color;
-  }).reduce(function(total, item) { return total + Number(item.qty || 0); }, 0);
-
-  stockEl.textContent = size + ' / ' + color + ' — Baki stok: ' + stock + ' unit' + (inCart ? ' | Dalam troli: ' + inCart : '');
-  stockEl.className = 'mt-1.5 px-2 py-1 rounded border text-[10px] font-bold ' + (
-    stock <= 0
-      ? 'bg-red-50 border-red-200 text-red-700'
-      : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-  );
-
-  const addBtn = stockEl.closest('.p-3') ? stockEl.closest('.p-3').querySelector('button') : null;
-  if (addBtn) {
-    addBtn.disabled = stock <= 0;
-    addBtn.className = 'w-full py-1.5 mt-1 rounded font-bold text-xs shadow-sm transition flex items-center justify-center ' + (
-      stock <= 0 ? 'bg-greycair-200 text-slate-400 cursor-not-allowed' : 'bg-gold-500 hover:bg-gold-600 text-white'
-    );
-    addBtn.innerHTML = stock <= 0
-      ? '<i class="fa-solid fa-ban mr-1"></i> Stok Variasi Habis'
-      : '<i class="fa-solid fa-plus mr-1"></i> Tambah Ke Troli';
-  }
+/* ===== PAPAR STOK VARIASI ===== */
+showSelectedProductStock=function(productId){
+  const p=products.find(x=>String(x.id)===String(productId)),el=document.getElementById('selected_stock_'+productId);
+  if(!p||!el)return;
+  const size=document.getElementById('size_select_'+productId)?.value||(p.sizes[0]||'Free Size');
+  const color=document.getElementById('color_select_'+productId)?.value||(p.colors[0]||'Piawai');
+  const stock=getVariantStock(p,size,color);
+  const inCart=cart.filter(i=>String(i.id)===String(productId)&&i.size===size&&i.color===color).reduce((n,i)=>n+Number(i.qty||0),0);
+  el.textContent=size+' / '+color+' — Baki stok: '+stock+' unit'+(inCart?' | Dalam troli: '+inCart:'');
+  el.className='mt-1.5 px-2 py-1 rounded border text-[10px] font-bold '+(stock<=0?'bg-red-50 border-red-200 text-red-700':'bg-emerald-50 border-emerald-200 text-emerald-700');
+  const btn=el.closest('.p-3')?.querySelector('button');
+  if(btn){btn.disabled=stock<=0;btn.className='w-full py-1.5 mt-1 rounded font-bold text-xs shadow-sm transition flex items-center justify-center '+(stock<=0?'bg-greycair-200 text-slate-400 cursor-not-allowed':'bg-gold-500 hover:bg-gold-600 text-white');btn.innerHTML=stock<=0?'<i class="fa-solid fa-ban mr-1"></i> Stok Variasi Habis':'<i class="fa-solid fa-plus mr-1"></i> Tambah Ke Troli';}
 };
 
-/* ============================================================
-   5. TROLI MENGIKUT STOK VARIASI
-   ============================================================ */
-addToCart = function(productId) {
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-  if (!product) return;
-
-  const sizeSelect = document.getElementById('size_select_' + productId);
-  const colorSelect = document.getElementById('color_select_' + productId);
-  const selectedSize = sizeSelect ? sizeSelect.value : (product.sizes[0] || 'Free Size');
-  const selectedColor = colorSelect ? colorSelect.value : (product.colors[0] || 'Piawai');
-
-  const cartItemId = productId + '-' + selectedSize + '-' + selectedColor;
-  const existing = cart.find(function(item) { return item.cartItemId === cartItemId; });
-  const available = getProductVariantStock(product, selectedSize, selectedColor);
-  const currentQty = existing ? existing.qty : 0;
-
-  if (currentQty + 1 > available) {
-    alert('Stok ' + product.name + ' [' + selectedSize + '/' + selectedColor + '] tidak mencukupi.\nBaki: ' + available + ' unit.');
-    return;
-  }
-
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({
-      cartItemId: cartItemId,
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      cost: product.cost || 0,
-      size: selectedSize,
-      color: selectedColor,
-      qty: 1
-    });
-  }
-
-  renderCart();
-  showSelectedProductStock(productId);
+/* ===== TROLI ===== */
+addToCart=function(productId){
+  const p=products.find(x=>String(x.id)===String(productId));if(!p)return;
+  const size=document.getElementById('size_select_'+productId)?.value||(p.sizes[0]||'Free Size');
+  const color=document.getElementById('color_select_'+productId)?.value||(p.colors[0]||'Piawai');
+  const cartItemId=productId+'-'+size+'-'+color;
+  const existing=cart.find(i=>i.cartItemId===cartItemId);
+  const available=getVariantStock(p,size,color),current=existing?existing.qty:0;
+  if(current+1>available){alert('Stok '+p.name+' ['+size+'/'+color+'] tidak mencukupi.\nBaki: '+available+' unit.');return;}
+  if(existing)existing.qty++;else cart.push({cartItemId,id:p.id,name:p.name,category:p.category,price:p.price,cost:p.cost||0,size,color,qty:1});
+  renderCart();showSelectedProductStock(productId);
+};
+updateQty=function(cartItemId,delta){
+  const item=cart.find(i=>i.cartItemId===cartItemId);if(!item)return;
+  if(delta>0){const p=products.find(x=>String(x.id)===String(item.id));const available=p?getVariantStock(p,item.size,item.color):0;if(item.qty+delta>available){alert('Stok variasi tidak mencukupi. Baki: '+available+' unit.');return;}}
+  item.qty+=delta;if(item.qty<=0)cart=cart.filter(i=>i.cartItemId!==cartItemId);
+  renderCart();products.forEach(p=>showSelectedProductStock(p.id));
 };
 
-updateQty = function(cartItemId, delta) {
-  const item = cart.find(function(i) { return i.cartItemId === cartItemId; });
-  if (!item) return;
-
-  if (delta > 0) {
-    const product = products.find(function(p) { return String(p.id) === String(item.id); });
-    const available = product ? getProductVariantStock(product, item.size, item.color) : 0;
-    if (item.qty + delta > available) {
-      alert('Stok variasi tidak mencukupi. Baki: ' + available + ' unit.');
-      return;
-    }
-  }
-
-  item.qty += delta;
-
-  if (item.qty <= 0) {
-    cart = cart.filter(function(i) { return i.cartItemId !== cartItemId; });
-  }
-
-  renderCart();
-  products.forEach(function(p) { showSelectedProductStock(p.id); });
+/* ===== CHECKOUT ===== */
+processCheckout=function(){
+  if(!cart.length){alert('Troli anda masih kosong!');return;}
+  const subtotal=cart.reduce((s,i)=>s+i.price*i.qty,0),discount=parseFloat(document.getElementById('discountInput').value)||0,grandTotal=Math.max(0,subtotal-discount),cash=parseFloat(document.getElementById('cashTendered').value)||0;
+  if(discount<0||discount>subtotal){alert('Diskaun tidak sah.');return;}
+  if(paymentMethod==='Cash'&&cash<grandTotal){alert('Jumlah tunai yang diterima tidak mencukupi!');return;}
+  const btn=document.getElementById('checkoutBtn');if(btn.disabled)return;
+  btn.disabled=true;btn.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-2"></i> Memproses...';
+  const now=new Date(),orderType=document.querySelector('input[name="orderType"]:checked')?.value||'Walk-In';
+  const transaction={orderNo:generateDailyReceiptNumber(now),orderType,channel:'POS Butik',staffName:currentUser?currentUser.name:'Staf',custName:document.getElementById('custName').value.trim()||'Pelanggan Walk-In',custPhone:document.getElementById('custPhone').value.trim()||'-',date:now.toLocaleString('ms-MY'),isoDate:now.toISOString(),items:JSON.parse(JSON.stringify(cart)),subtotal,discount,grandTotal,paymentMethod,cashTendered:paymentMethod==='Cash'?cash:grandTotal,change:paymentMethod==='Cash'?cash-grandTotal:0};
+  secureProxyRequest('saveSale',{data:JSON.stringify(transaction)},function(result){
+    const saved=result.transaction||transaction;salesHistory.unshift(saved);pushTransactionStocksToWooCommerce(saved);
+    if(paymentMethod==='Cash')triggerCashDrawer();printReceipt(saved);clearCart();
+    loadInventoryFromGoogleSheet(function(){updateFinancialReports();});
+    btn.disabled=false;btn.innerHTML='Bayar & Cetak Resit';
+    alert('Bayaran RM '+grandTotal.toFixed(2)+' berjaya.\nNo Resit: #'+saved.orderNo);
+  },function(err){btn.disabled=false;btn.innerHTML='Bayar & Cetak Resit';alert('Jualan tidak disahkan: '+err.message+'\nTroli dikekalkan. Sila semak Sejarah Jualan.');loadInventoryFromGoogleSheet();});
 };
 
-/* ============================================================
-   6. CHECKOUT - BACKEND YANG TOLAK STOK
-   ============================================================ */
-processCheckout = function() {
-  if (cart.length === 0) {
-    alert('Troli anda masih kosong!');
-    return;
-  }
-
-  const subtotal = cart.reduce(function(sum, item) { return sum + item.price * item.qty; }, 0);
-  const discount = parseFloat(document.getElementById('discountInput').value) || 0;
-  const grandTotal = Math.max(0, subtotal - discount);
-  const cash = parseFloat(document.getElementById('cashTendered').value) || 0;
-
-  if (discount < 0 || discount > subtotal) {
-    alert('Diskaun tidak sah.');
-    return;
-  }
-
-  if (paymentMethod === 'Cash' && cash < grandTotal) {
-    alert('Jumlah tunai yang diterima tidak mencukupi!');
-    return;
-  }
-
-  const checkoutBtn = document.getElementById('checkoutBtn');
-  if (checkoutBtn.disabled) return;
-
-  checkoutBtn.disabled = true;
-  checkoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Memproses...';
-
-  const now = new Date();
-  const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
-  const transaction = {
-    orderNo: generateDailyReceiptNumber(now),
-    orderType: orderTypeElem ? orderTypeElem.value : 'Walk-In',
-    channel: 'POS Butik',
-    staffName: currentUser ? currentUser.name : 'Staf',
-    custName: document.getElementById('custName').value.trim() || 'Pelanggan Walk-In',
-    custPhone: document.getElementById('custPhone').value.trim() || '-',
-    date: now.toLocaleString('ms-MY'),
-    isoDate: now.toISOString(),
-    items: JSON.parse(JSON.stringify(cart)),
-    subtotal: subtotal,
-    discount: discount,
-    grandTotal: grandTotal,
-    paymentMethod: paymentMethod,
-    cashTendered: paymentMethod === 'Cash' ? cash : grandTotal,
-    change: paymentMethod === 'Cash' ? (cash - grandTotal) : 0
-  };
-
-  secureProxyRequest('saveSale', { data: JSON.stringify(transaction) }, function(result) {
-    const savedTx = result.transaction || transaction;
-
-    salesHistory.unshift(savedTx);
-    pushTransactionStocksToWooCommerce(savedTx);
-
-    if (paymentMethod === 'Cash') triggerCashDrawer();
-    printReceipt(savedTx);
-    clearCart();
-
-    loadInventoryFromGoogleSheet(function() {
-      updateFinancialReports();
-    });
-
-    checkoutBtn.disabled = false;
-    checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
-    alert('Bayaran RM ' + grandTotal.toFixed(2) + ' berjaya.\nNo Resit: #' + savedTx.orderNo);
-  }, function(err) {
-    checkoutBtn.disabled = false;
-    checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
-    alert('Jualan tidak disahkan: ' + err.message + '\nTroli dikekalkan. Sila semak Sejarah Jualan sebelum cuba semula.');
-    loadInventoryFromGoogleSheet();
-  });
+/* ===== RESTOK / PELARASAN / KELUAR ===== */
+openStockActionModal=function(productId,type){
+  type=type||'IN';const p=products.find(x=>String(x.id)===String(productId));if(!p)return;
+  document.getElementById('stockActionProductId').value=p.id;document.getElementById('stockActionType').value=type;document.getElementById('stockActionQty').value=1;document.getElementById('stockActionRef').value='';
+  document.getElementById('stockActionSize').innerHTML=p.sizes.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+  document.getElementById('stockActionColor').innerHTML=p.colors.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+  updateStockActionInfo();toggleStockActionFields();
+  document.getElementById('stockActionModal').classList.remove('hidden');document.getElementById('stockActionModal').classList.add('flex');
 };
-
-/* ============================================================
-   7. RESTOK / PELARASAN / STOK KELUAR MENGIKUT VARIASI
-   ============================================================ */
-openStockActionModal = function(productId, type) {
-  type = type || 'IN';
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-  if (!product) return;
-
-  document.getElementById('stockActionProductId').value = product.id;
-  document.getElementById('stockActionType').value = type;
-  document.getElementById('stockActionQty').value = 1;
-  document.getElementById('stockActionRef').value = '';
-
-  const sizeSelect = document.getElementById('stockActionSize');
-  const colorSelect = document.getElementById('stockActionColor');
-
-  sizeSelect.innerHTML = product.sizes.map(function(s) {
-    return '<option value="' + s + '">' + s + '</option>';
-  }).join('');
-
-  colorSelect.innerHTML = product.colors.map(function(c) {
-    return '<option value="' + c + '">' + c + '</option>';
-  }).join('');
-
-  updateStockActionInfo();
-  toggleStockActionFields();
-
-  document.getElementById('stockActionModal').classList.remove('hidden');
-  document.getElementById('stockActionModal').classList.add('flex');
-};
-
-function updateStockActionInfo() {
-  const productId = document.getElementById('stockActionProductId').value;
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-  if (!product) return;
-
-  const size = document.getElementById('stockActionSize').value;
-  const color = document.getElementById('stockActionColor').value;
-  const stock = getProductVariantStock(product, size, color);
-
-  document.getElementById('stockActionProduct').innerText =
-    product.name + ' | ' + product.sku + ' | ' + size + '/' + color + ' | Baki: ' + stock + ' unit | Belum diagih: ' + (product.unallocatedStock || 0);
-
-  document.getElementById('stockActionNewQty').value = stock;
+function updateStockActionInfo(){
+  const id=document.getElementById('stockActionProductId').value,p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  const size=document.getElementById('stockActionSize').value,color=document.getElementById('stockActionColor').value,stock=getVariantStock(p,size,color);
+  document.getElementById('stockActionProduct').innerText=p.name+' | '+p.sku+' | '+size+'/'+color+' | Baki: '+stock+' unit | Belum diagih: '+(p.unallocatedStock||0);
+  document.getElementById('stockActionNewQty').value=stock;
 }
-
-document.getElementById('stockActionSize').addEventListener('change', updateStockActionInfo);
-document.getElementById('stockActionColor').addEventListener('change', updateStockActionInfo);
-
-saveStockAction = function() {
-  const productId = document.getElementById('stockActionProductId').value;
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-  if (!product) return;
-
-  const type = document.getElementById('stockActionType').value;
-  const size = document.getElementById('stockActionSize').value;
-  const color = document.getElementById('stockActionColor').value;
-  const reference = document.getElementById('stockActionRef').value.trim();
-  const before = getProductVariantStock(product, size, color);
-
-  let after = before;
-
-  if (type === 'ADJUST') {
-    after = Math.max(0, parseInt(document.getElementById('stockActionNewQty').value) || 0);
-  } else {
-    const qty = Math.max(0, parseInt(document.getElementById('stockActionQty').value) || 0);
-    if (!qty) {
-      alert('Kuantiti tidak sah.');
-      return;
-    }
-    after = type === 'IN' ? before + qty : before - qty;
-  }
-
-  if (after < 0) {
-    alert('Stok variasi tidak mencukupi. Baki: ' + before + ' unit.');
-    return;
-  }
-
-  setProductVariantStock(product, size, color, after);
-
-  recordStockMovement(
-    product,
-    type,
-    Math.abs(after - before),
-    before,
-    after,
-    (reference ? reference + ' | ' : '') + 'Variasi: ' + size + '/' + color
-  );
-
+document.getElementById('stockActionSize').addEventListener('change',updateStockActionInfo);
+document.getElementById('stockActionColor').addEventListener('change',updateStockActionInfo);
+saveStockAction=function(){
+  const id=document.getElementById('stockActionProductId').value,p=products.find(x=>String(x.id)===String(id));if(!p)return;
+  const type=document.getElementById('stockActionType').value,size=document.getElementById('stockActionSize').value,color=document.getElementById('stockActionColor').value,ref=document.getElementById('stockActionRef').value.trim(),before=getVariantStock(p,size,color);
+  let after=before;
+  if(type==='ADJUST')after=Math.max(0,parseInt(document.getElementById('stockActionNewQty').value)||0);
+  else{const qty=Math.max(0,parseInt(document.getElementById('stockActionQty').value)||0);if(!qty){alert('Kuantiti tidak sah.');return;}after=type==='IN'?before+qty:before-qty;}
+  if(after<0){alert('Stok variasi tidak mencukupi. Baki: '+before+' unit.');return;}
+  setVariantStock(p,size,color,after);
+  recordStockMovement(p,type,Math.abs(after-before),before,after,(ref?ref+' | ':'')+'Variasi: '+size+'/'+color);
   saveProducts();
-  syncInventoryToGoogleSheet(function() {
-    closeStockActionModal();
-    renderInventoryTable();
-    renderProducts();
-    alert('Stok ' + product.name + ' [' + size + '/' + color + '] berjaya disimpan: ' + before + ' → ' + after + ' unit.');
-  });
+  syncInventoryToGoogleSheet(function(){closeStockActionModal();renderInventoryTable();renderProducts();alert('Stok '+p.name+' ['+size+'/'+color+'] berjaya disimpan: '+before+' → '+after+' unit.');});
 };
 
-/* ============================================================
-   8. SYNC INVENTORI KE GOOGLE SHEET
-   ============================================================ */
-syncInventoryToGoogleSheet = function(callback) {
-  if (!Array.isArray(products)) return;
-
-  secureProxyRequest('syncInventory', { data: JSON.stringify(products) }, function(result) {
-    if (result && Array.isArray(result.inventory)) {
-      products = result.inventory;
-      normalizeProducts();
-      renderCategoryFilterButtons();
-      renderProducts();
-      renderInventoryTable();
-    }
-
-    if (typeof callback === 'function') callback(result);
-  }, function(err) {
-    alert('Inventori belum disimpan ke Google Sheet: ' + err.message);
-    loadInventoryFromGoogleSheet();
-  });
+/* ===== SYNC INVENTORI ===== */
+syncInventoryToGoogleSheet=function(callback){
+  if(!Array.isArray(products))return;
+  secureProxyRequest('syncInventory',{data:JSON.stringify(products)},function(result){
+    if(result&&Array.isArray(result.inventory)){products=result.inventory;normalizeProducts();renderCategoryFilterButtons();renderProducts();renderInventoryTable();}
+    if(typeof callback==='function')callback(result);
+  },function(err){alert('Inventori belum disimpan ke Google Sheet: '+err.message);loadInventoryFromGoogleSheet();});
 };
 
-/* ============================================================
-   9. INVENTORI - PAPARAN, DELETE, IMPORT, EKSPORT
-   ============================================================ */
-renderInventoryTable = function() {
-  const query = (document.getElementById('invSearch')?.value || '').toLowerCase().trim();
-  const filter = document.getElementById('invFilterStatus')?.value || 'ALL';
-  const body = document.getElementById('inventoryTableBody');
-  if (!body) return;
-
-  let units = 0, low = 0, out = 0, value = 0;
-
-  products.forEach(function(p) {
-    units += Number(p.stock) || 0;
-    const status = getStockStatus(p);
-    if (status === 'LOW') low++;
-    if (status === 'OUT') out++;
-    value += (Number(p.stock) || 0) * (Number(p.cost) || 0);
-  });
-
-  document.getElementById('invStatProducts').innerText = products.length;
-  document.getElementById('invStatUnits').innerText = units;
-  document.getElementById('invStatLow').innerText = low;
-  document.getElementById('invStatOut').innerText = out;
-  document.getElementById('invStatValue').innerText = 'RM ' + value.toFixed(2);
-
-  const rows = products.filter(function(p) {
-    const status = getStockStatus(p);
-    const matchQuery = !query || (p.name + ' ' + p.sku + ' ' + p.category).toLowerCase().includes(query);
-    return matchQuery && (filter === 'ALL' || filter === status);
-  });
-
-  body.innerHTML = rows.map(function(p) {
-    const variantText = Object.keys(p.variationStock || {}).map(function(key) {
-      const parts = key.split('|');
-      return parts[0] + '/' + parts[1] + ': ' + p.variationStock[key];
-    }).join(' · ');
-
-    return '<tr class="border-t border-greycair-200 hover:bg-greycair-50">' +
-      '<td class="px-3 py-2 text-gold-700 font-semibold">' + p.sku + '</td>' +
-      '<td class="px-3 py-2"><div class="font-semibold text-slate-800">' + p.name + '</div>' +
-      '<div class="text-[10px] text-slate-500">' + variantText + '</div>' +
-      (p.unallocatedStock ? '<div class="text-[10px] text-amber-600">Belum diagih: ' + p.unallocatedStock + ' unit</div>' : '') +
-      '</td>' +
-      '<td class="px-3 py-2 text-slate-600">' + (p.category || '-') + '</td>' +
-      '<td class="px-3 py-2 text-right">RM ' + Number(p.price || 0).toFixed(2) + '</td>' +
-      '<td class="px-3 py-2 text-right text-slate-500">RM ' + Number(p.cost || 0).toFixed(2) + '</td>' +
-      '<td class="px-3 py-2 text-right font-bold">' + p.stock + '</td>' +
-      '<td class="px-3 py-2 text-right text-slate-500">' + p.minStock + '</td>' +
-      '<td class="px-3 py-2 text-center">' + statusBadge(p) + '</td>' +
-      '<td class="px-3 py-2 text-right whitespace-nowrap">' +
-        '<button onclick="openStockActionModal(' + p.id + ', \'IN\')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">+ Restok</button>' +
-        '<button onclick="openStockActionModal(' + p.id + ', \'ADJUST\')" class="px-2 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded text-[10px] font-semibold mr-1">Pelarasan</button>' +
-        '<button onclick="deleteInventoryProduct(' + p.id + ')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold" title="Padam produk"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button>' +
-      '</td></tr>';
-  }).join('') || '<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Tiada produk ditemui.</td></tr>';
+/* ===== INVENTORI ===== */
+renderInventoryTable=function(){
+  const q=(document.getElementById('invSearch')?.value||'').toLowerCase().trim(),filter=document.getElementById('invFilterStatus')?.value||'ALL',body=document.getElementById('inventoryTableBody');if(!body)return;
+  let units=0,low=0,out=0,value=0;
+  products.forEach(p=>{units+=Number(p.stock)||0;const st=getStockStatus(p);if(st==='LOW')low++;if(st==='OUT')out++;value+=(Number(p.stock)||0)*(Number(p.cost)||0);});
+  document.getElementById('invStatProducts').innerText=products.length;document.getElementById('invStatUnits').innerText=units;document.getElementById('invStatLow').innerText=low;document.getElementById('invStatOut').innerText=out;document.getElementById('invStatValue').innerText='RM '+value.toFixed(2);
+  const rows=products.filter(p=>{const st=getStockStatus(p);const match=!q||(p.name+' '+p.sku+' '+p.category).toLowerCase().includes(q);return match&&(filter==='ALL'||filter===st);});
+  body.innerHTML=rows.map(p=>{
+    const variantText=Object.keys(p.variationStock||{}).map(k=>{const parts=k.split('|');return parts[0]+'/'+parts[1]+': '+p.variationStock[k];}).join(' · ');
+    return '<tr class="border-t border-greycair-200 hover:bg-greycair-50"><td class="px-3 py-2 text-gold-700 font-semibold">'+p.sku+'</td><td class="px-3 py-2"><div class="font-semibold text-slate-800">'+p.name+'</div><div class="text-[10px] text-slate-500">'+variantText+'</div>'+(p.unallocatedStock?'<div class="text-[10px] text-amber-600">Belum diagih: '+p.unallocatedStock+' unit</div>':'')+'</td><td class="px-3 py-2 text-slate-600">'+(p.category||'-')+'</td><td class="px-3 py-2 text-right">RM '+Number(p.price||0).toFixed(2)+'</td><td class="px-3 py-2 text-right text-slate-500">RM '+Number(p.cost||0).toFixed(2)+'</td><td class="px-3 py-2 text-right font-bold">'+p.stock+'</td><td class="px-3 py-2 text-right text-slate-500">'+p.minStock+'</td><td class="px-3 py-2 text-center">'+statusBadge(p)+'</td><td class="px-3 py-2 text-right whitespace-nowrap"><button onclick="openStockActionModal('+p.id+',\'IN\')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">+ Restok</button><button onclick="openStockActionModal('+p.id+',\'ADJUST\')" class="px-2 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded text-[10px] font-semibold mr-1">Pelarasan</button><button onclick="deleteInventoryProduct('+p.id+')" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button></td></tr>';
+  }).join('')||'<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Tiada produk ditemui.</td></tr>';
+};
+deleteInventoryProduct=function(productId){
+  if(!currentUser||currentUser.role!=='admin'){alert('Hanya Admin dibenarkan memadam produk.');return;}
+  const p=products.find(x=>String(x.id)===String(productId));if(!p)return;
+  if(!confirm('Padam produk '+p.name+' daripada inventori?\n\nRekod jualan lama tidak dipadam.'))return;
+  products=products.filter(x=>String(x.id)!==String(productId));cart=cart.filter(i=>String(i.id)!==String(productId));
+  saveProducts();renderCart();
+  syncInventoryToGoogleSheet(function(){renderCategoryFilterButtons();renderProducts();renderInventoryTable();alert('Produk '+p.name+' dipadam dan disimpan ke Google Sheet.');});
+};
+saveNewProduct=function(){
+  if(!currentUser||currentUser.role!=='admin'){alert('Hanya Admin dibenarkan menambah produk.');return;}
+  const name=document.getElementById('newProdName').value.trim();if(!name){alert('Nama produk diperlukan.');return;}
+  const sku=document.getElementById('newProdSku').value.trim()||('EC-'+Date.now().toString().slice(-6));
+  if(products.some(p=>String(p.sku).toLowerCase()===sku.toLowerCase())){alert('SKU tersebut sudah digunakan.');return;}
+  const stock=Math.max(0,parseInt(document.getElementById('newProdStock').value)||0);
+  const sizes=document.getElementById('newProdSizes').value.split(',').map(x=>x.trim()).filter(Boolean);
+  const colors=document.getElementById('newProdColors').value.split(',').map(x=>x.trim()).filter(Boolean);
+  const p={id:Date.now(),name,sku,category:document.getElementById('newProdCategory').value.trim()||'Aksesori',price:parseFloat(document.getElementById('newProdPrice').value)||0,cost:parseFloat(document.getElementById('newProdCost').value)||0,minStock:Math.max(0,parseInt(document.getElementById('newProdMinStock').value)||0),image:document.getElementById('newProdImage').value.trim(),sizes:sizes.length?sizes:['Free Size'],colors:colors.length?colors:['Piawai'],variationStock:{},unallocatedStock:stock,isManual:true};
+  recalcProductStock(p);products.push(p);saveProducts();
+  syncInventoryToGoogleSheet(function(){closeAddProductModal();renderCategoryFilterButtons();renderProducts();renderInventoryTable();alert('Produk '+name+' berjaya ditambah.\n\nJika ada pelbagai saiz/warna, gunakan Restok untuk agih stok.');});
 };
 
-deleteInventoryProduct = function(productId) {
-  if (!currentUser || currentUser.role !== 'admin') {
-    alert('Hanya Admin dibenarkan memadam produk.');
-    return;
-  }
-
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-  if (!product) return;
-
-  if (!confirm('Padam produk ' + product.name + ' daripada inventori?\n\nRekod jualan lama tidak dipadam.')) return;
-
-  products = products.filter(function(p) { return String(p.id) !== String(productId); });
-  cart = cart.filter(function(item) { return String(item.id) !== String(productId); });
-
-  saveProducts();
-  renderCart();
-
-  syncInventoryToGoogleSheet(function() {
-    renderCategoryFilterButtons();
-    renderProducts();
-    renderInventoryTable();
-    alert('Produk ' + product.name + ' telah dipadam dan disimpan ke Google Sheet.');
-  });
-};
-
-saveNewProduct = function() {
-  if (!currentUser || currentUser.role !== 'admin') {
-    alert('Hanya Admin dibenarkan menambah produk.');
-    return;
-  }
-
-  const name = document.getElementById('newProdName').value.trim();
-  if (!name) {
-    alert('Nama produk diperlukan.');
-    return;
-  }
-
-  const sku = document.getElementById('newProdSku').value.trim() || ('EC-' + Date.now().toString().slice(-6));
-
-  if (products.some(function(p) { return String(p.sku).toLowerCase() === sku.toLowerCase(); })) {
-    alert('SKU tersebut sudah digunakan.');
-    return;
-  }
-
-  const stock = Math.max(0, parseInt(document.getElementById('newProdStock').value) || 0);
-  const sizes = document.getElementById('newProdSizes').value.split(',').map(function(x) { return x.trim(); }).filter(Boolean);
-  const colors = document.getElementById('newProdColors').value.split(',').map(function(x) { return x.trim(); }).filter(Boolean);
-
-  const product = {
-    id: Date.now(),
-    name: name,
-    sku: sku,
-    category: document.getElementById('newProdCategory').value.trim() || 'Aksesori',
-    price: parseFloat(document.getElementById('newProdPrice').value) || 0,
-    cost: parseFloat(document.getElementById('newProdCost').value) || 0,
-    minStock: Math.max(0, parseInt(document.getElementById('newProdMinStock').value) || 0),
-    image: document.getElementById('newProdImage').value.trim(),
-    sizes: sizes.length ? sizes : ['Free Size'],
-    colors: colors.length ? colors : ['Piawai'],
-    variationStock: {},
-    unallocatedStock: stock,
-    isManual: true
-  };
-
-  recalculateProductStock(product);
-  products.push(product);
-  saveProducts();
-
-  syncInventoryToGoogleSheet(function() {
-    closeAddProductModal();
-    renderCategoryFilterButtons();
-    renderProducts();
-    renderInventoryTable();
-    alert('Produk ' + name + ' berjaya ditambah.\n\nJika ada pelbagai saiz/warna, gunakan Restok untuk agih stok mengikut variasi.');
-  });
-};
-
-function exportInventoryCSV(templateOnly) {
-  const header = ['ID', 'SKU', 'NamaProduk', 'Kategori', 'HargaJualRM', 'KosUnitRM', 'StokTotal', 'MinStok', 'Saiz', 'Warna', 'StokVariasi', 'BelumDiagih'];
-  const rows = [header];
-
-  if (templateOnly) {
-    rows.push(['', 'CONTOH-001', 'Contoh Jubah', 'Jubah', '99', '50', '0', '5', 'M', 'Hitam', '0', '0']);
-  } else {
-    products.forEach(function(p) {
-      const keys = Object.keys(p.variationStock || {});
-
-      if (!keys.length) {
-        rows.push([p.id, p.sku, p.name, p.category, p.price, p.cost, p.stock, p.minStock, '', '', '', p.unallocatedStock || 0]);
-      } else {
-        keys.forEach(function(key, index) {
-          const parts = key.split('|');
-          rows.push([
-            p.id, p.sku, p.name, p.category, p.price, p.cost, p.stock, p.minStock,
-            parts[0], parts[1], p.variationStock[key],
-            index === 0 ? (p.unallocatedStock || 0) : ''
-          ]);
-        });
-      }
-    });
-  }
-
-  const csv = '\uFEFF' + rows.map(function(row) {
-    return row.map(function(value) { return '"' + String(value ?? '').replace(/"/g, '""') + '"'; }).join(',');
-  }).join('\r\n');
-
-  downloadCSV(csv, templateOnly ? 'Template_Inventori_Variasi.csv' : 'Inventori_Variasi_EjayCollection.csv');
+/* ===== IMPORT / EKSPORT CSV ===== */
+function exportInventoryCSV(templateOnly){
+  const header=['ID','SKU','NamaProduk','Kategori','HargaJualRM','KosUnitRM','StokTotal','MinStok','Saiz','Warna','StokVariasi','BelumDiagih'];
+  const rows=[header];
+  if(templateOnly)rows.push(['','CONTOH-001','Contoh Jubah','Jubah','99','50','0','5','M','Hitam','0','0']);
+  else products.forEach(p=>{const keys=Object.keys(p.variationStock||{});if(!keys.length)rows.push([p.id,p.sku,p.name,p.category,p.price,p.cost,p.stock,p.minStock,'','','',p.unallocatedStock||0]);else keys.forEach((k,i)=>{const parts=k.split('|');rows.push([p.id,p.sku,p.name,p.category,p.price,p.cost,p.stock,p.minStock,parts[0],parts[1],p.variationStock[k],i===0?(p.unallocatedStock||0):'']);});});
+  const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  downloadCSV(csv,templateOnly?'Template_Inventori_Variasi.csv':'Inventori_Variasi_EjayCollection.csv');
 }
-
-function parseCSV(text) {
-  text = text.replace(/^\uFEFF/, '');
-  const rows = [];
-  let row = [], cell = '', quoted = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-
-    if (char === '"') {
-      if (quoted && text[i + 1] === '"') {
-        cell += '"';
-        i++;
-      } else {
-        quoted = !quoted;
-      }
-    } else if (char === ',' && !quoted) {
-      row.push(cell);
-      cell = '';
-    } else if ((char === '\n' || char === '\r') && !quoted) {
-      if (char === '\r' && text[i + 1] === '\n') i++;
-      row.push(cell);
-      if (row.some(function(value) { return value !== ''; })) rows.push(row);
-      row = [];
-      cell = '';
-    } else {
-      cell += char;
-    }
-  }
-
-  row.push(cell);
-  if (row.some(function(value) { return value !== ''; })) rows.push(row);
-
-  return rows;
+function parseCSVText(text){
+  text=text.replace(/^\uFEFF/,'');const rows=[];let row=[],cell='',quoted=false;
+  for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v!==''))rows.push(row);row=[];cell='';}else cell+=c;}
+  row.push(cell);if(row.some(v=>v!==''))rows.push(row);return rows;
 }
-
-function importInventoryCSV(file) {
-  if (!file) return;
-
-  if (!currentUser || currentUser.role !== 'admin') {
-    alert('Hanya Admin dibenarkan import inventori.');
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = function(event) {
-    try {
-      const rows = parseCSV(event.target.result);
-      const header = rows.shift().map(function(value) { return value.trim(); });
-
-      const required = ['SKU', 'NamaProduk', 'Saiz', 'Warna', 'StokVariasi'];
-      const missing = required.filter(function(name) { return !header.includes(name); });
-
-      if (missing.length) {
-        throw new Error('Kolum tidak lengkap: ' + missing.join(', '));
-      }
-
-      const imported = JSON.parse(JSON.stringify(products));
-      const seen = {};
-
-      rows.forEach(function(row, index) {
-        const data = {};
-        header.forEach(function(name, col) { data[name] = (row[col] || '').trim(); });
-
-        const sku = data['SKU'];
-        if (!sku) throw new Error('SKU diperlukan pada baris ' + (index + 2));
-
-        const stock = parseInt(data['StokVariasi']);
-        if (isNaN(stock) || stock < 0) throw new Error('StokVariasi tidak sah pada baris ' + (index + 2));
-
-        const size = data['Saiz'];
-        const color = data['Warna'];
-        if (!size || !color) throw new Error('Saiz dan Warna diperlukan pada baris ' + (index + 2));
-
-        const key = sku.toLowerCase() + '|' + size + '|' + color;
-        if (seen[key]) throw new Error('Variasi berulang pada baris ' + (index + 2));
-        seen[key] = true;
-
-        let product = imported.find(function(p) { return String(p.sku).toLowerCase() === sku.toLowerCase(); });
-
-        if (!product) {
-          product = {
-            id: data['ID'] ? Number(data['ID']) : Date.now() + index,
-            sku: sku,
-            name: data['NamaProduk'],
-            category: data['Kategori'] || 'Aksesori',
-            price: Number(data['HargaJualRM'] || 0),
-            cost: Number(data['KosUnitRM'] || 0),
-            minStock: Number(data['MinStok'] || 5),
-            image: '',
-            sizes: [],
-            colors: [],
-            variationStock: {},
-            unallocatedStock: 0
-          };
-          imported.push(product);
-        }
-
-        if (data['NamaProduk']) product.name = data['NamaProduk'];
-        if (data['Kategori']) product.category = data['Kategori'];
-        if (data['HargaJualRM'] !== '') product.price = Number(data['HargaJualRM'] || 0);
-        if (data['KosUnitRM'] !== '') product.cost = Number(data['KosUnitRM'] || 0);
-        if (data['MinStok'] !== '') product.minStock = Number(data['MinStok'] || 0);
-
-        if (!product.sizes.includes(size)) product.sizes.push(size);
-        if (!product.colors.includes(color)) product.colors.push(color);
-
-        product.variationStock[variantKey(size, color)] = stock;
-
-        if (data['BelumDiagih'] !== '') {
-          product.unallocatedStock = Math.max(0, parseInt(data['BelumDiagih']) || 0);
-        }
-
-        recalculateProductStock(product);
+function importInventoryCSV(file){
+  if(!file)return;if(!currentUser||currentUser.role!=='admin'){alert('Hanya Admin dibenarkan import inventori.');return;}
+  const reader=new FileReader();
+  reader.onload=function(event){
+    try{
+      const rows=parseCSVText(event.target.result),header=rows.shift().map(v=>v.trim());
+      const required=['SKU','NamaProduk','Saiz','Warna','StokVariasi'];const missing=required.filter(n=>!header.includes(n));
+      if(missing.length)throw new Error('Kolum tidak lengkap: '+missing.join(', '));
+      const imported=JSON.parse(JSON.stringify(products)),seen={};
+      rows.forEach(function(row,index){
+        const data={};header.forEach((n,c)=>data[n]=(row[c]||'').trim());
+        const sku=data['SKU'];if(!sku)throw new Error('SKU diperlukan pada baris '+(index+2));
+        const stock=parseInt(data['StokVariasi']);if(isNaN(stock)||stock<0)throw new Error('StokVariasi tidak sah pada baris '+(index+2));
+        const size=data['Saiz'],color=data['Warna'];if(!size||!color)throw new Error('Saiz dan Warna diperlukan pada baris '+(index+2));
+        const key=sku.toLowerCase()+'|'+size+'|'+color;if(seen[key])throw new Error('Variasi berulang pada baris '+(index+2));seen[key]=true;
+        let p=imported.find(x=>String(x.sku).toLowerCase()===sku.toLowerCase());
+        if(!p){p={id:data['ID']?Number(data['ID']):Date.now()+index,sku,name:data['NamaProduk'],category:data['Kategori']||'Aksesori',price:Number(data['HargaJualRM']||0),cost:Number(data['KosUnitRM']||0),minStock:Number(data['MinStok']||5),image:'',sizes:[],colors:[],variationStock:{},unallocatedStock:0};imported.push(p);}
+        if(data['NamaProduk'])p.name=data['NamaProduk'];if(data['Kategori'])p.category=data['Kategori'];
+        if(data['HargaJualRM']!=='')p.price=Number(data['HargaJualRM']||0);if(data['KosUnitRM']!=='')p.cost=Number(data['KosUnitRM']||0);if(data['MinStok']!=='')p.minStock=Number(data['MinStok']||0);
+        if(!p.sizes.includes(size))p.sizes.push(size);if(!p.colors.includes(color))p.colors.push(color);
+        p.variationStock[variantKey(size,color)]=stock;
+        if(data['BelumDiagih']!=='')p.unallocatedStock=Math.max(0,parseInt(data['BelumDiagih'])||0);
+        recalcProductStock(p);
       });
-
-      if (!confirm('Import ' + rows.length + ' baris variasi?\n\nStok variasi yang sama akan DIGANTI dengan nilai CSV.')) return;
-
-      products = imported;
-      saveProducts();
-
-      syncInventoryToGoogleSheet(function() {
-        alert('Import CSV berjaya dan disimpan ke Google Sheet.');
-      });
-    } catch (err) {
-      alert('Import dibatalkan: ' + err.message);
-    }
+      if(!confirm('Import '+rows.length+' baris variasi?\n\nStok variasi yang sama akan DIGANTI dengan nilai CSV.'))return;
+      products=imported;saveProducts();
+      syncInventoryToGoogleSheet(function(){alert('Import CSV berjaya dan disimpan ke Google Sheet.');});
+    }catch(err){alert('Import dibatalkan: '+err.message);}
   };
-
   reader.readAsText(file);
 }
 
-/* ============================================================
-   10. JUALAN LUAR MENGIKUT VARIASI
-   ============================================================ */
-saveExternalSale = function() {
-  const channel = document.getElementById('extChannel').value;
-  const singleDateVal = document.getElementById('extSingleDate').value;
-  const custName = document.getElementById('extCustName').value.trim() || 'Pelanggan Luar';
-  const custPhone = document.getElementById('extCustPhone').value.trim() || '-';
-  const productId = document.getElementById('extProductId').value;
-  const size = document.getElementById('extSize').value;
-  const color = document.getElementById('extColor').value;
-  const qty = parseInt(document.getElementById('extQty').value) || 1;
-  const total = parseFloat(document.getElementById('extTotal').value) || 0;
-
-  const product = products.find(function(p) { return String(p.id) === String(productId); });
-
-  if (!product || total <= 0) {
-    alert('Sila pastikan butiran produk dan jumlah jualan adalah sah.');
-    return;
-  }
-
-  const available = getProductVariantStock(product, size, color);
-  if (available < qty) {
-    alert('Stok ' + product.name + ' [' + size + '/' + color + '] tidak mencukupi.\nBaki: ' + available + ' unit.');
-    return;
-  }
-
-  const targetDate = singleDateVal ? new Date(singleDateVal) : new Date();
-  const receiptNo = generateDailyReceiptNumber(targetDate);
-
-  const transaction = {
-    orderNo: receiptNo,
-    orderType: 'Online',
-    channel: channel,
-    staffName: currentUser ? currentUser.name : 'Staf POS',
-    custName: custName,
-    custPhone: custPhone,
-    date: targetDate.toLocaleString('ms-MY'),
-    isoDate: targetDate.toISOString(),
-    items: [{
-      cartItemId: productId + '-' + size + '-' + color,
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      cost: product.cost || 0,
-      size: size,
-      color: color,
-      qty: qty
-    }],
-    subtotal: total,
-    discount: 0,
-    grandTotal: total,
-    paymentMethod: channel.includes('Program') ? 'Cash/QR Tapak' : 'Online Transfer',
-    cashTendered: total,
-    change: 0
-  };
-
-  secureProxyRequest('saveSale', { data: JSON.stringify(transaction) }, function(result) {
-    salesHistory.unshift(result.transaction || transaction);
-    pushTransactionStocksToWooCommerce(result.transaction || transaction);
-    closeExternalSaleModal();
-    loadInventoryFromGoogleSheet();
-    updateFinancialReports();
-    alert('Jualan ' + channel + ' berjaya.\nNo Resit: #' + receiptNo);
-  }, function(err) {
-    alert('Gagal simpan jualan: ' + err.message);
-  });
+/* ===== JUALAN LUAR ===== */
+saveExternalSale=function(){
+  const channel=document.getElementById('extChannel').value,singleDateVal=document.getElementById('extSingleDate').value,custName=document.getElementById('extCustName').value.trim()||'Pelanggan Luar',custPhone=document.getElementById('extCustPhone').value.trim()||'-',productId=document.getElementById('extProductId').value,size=document.getElementById('extSize').value,color=document.getElementById('extColor').value,qty=parseInt(document.getElementById('extQty').value)||1,total=parseFloat(document.getElementById('extTotal').value)||0;
+  const p=products.find(x=>String(x.id)===String(productId));
+  if(!p||total<=0){alert('Sila pastikan butiran produk dan jumlah jualan adalah sah.');return;}
+  const available=getVariantStock(p,size,color);if(available<qty){alert('Stok '+p.name+' ['+size+'/'+color+'] tidak mencukupi.\nBaki: '+available+' unit.');return;}
+  const targetDate=singleDateVal?new Date(singleDateVal):new Date(),receiptNo=generateDailyReceiptNumber(targetDate);
+  const transaction={orderNo:receiptNo,orderType:'Online',channel,staffName:currentUser?currentUser.name:'Staf POS',custName,custPhone,date:targetDate.toLocaleString('ms-MY'),isoDate:targetDate.toISOString(),items:[{cartItemId:productId+'-'+size+'-'+color,id:p.id,name:p.name,category:p.category,price:p.price,cost:p.cost||0,size,color,qty}],subtotal:total,discount:0,grandTotal:total,paymentMethod:channel.includes('Program')?'Cash/QR Tapak':'Online Transfer',cashTendered:total,change:0};
+  secureProxyRequest('saveSale',{data:JSON.stringify(transaction)},function(result){
+    salesHistory.unshift(result.transaction||transaction);pushTransactionStocksToWooCommerce(result.transaction||transaction);closeExternalSaleModal();loadInventoryFromGoogleSheet();updateFinancialReports();alert('Jualan '+channel+' berjaya.\nNo Resit: #'+receiptNo);
+  },function(err){alert('Gagal simpan jualan: '+err.message);});
 };
 
-/* ============================================================
-   11. INVOIS EJEN / STOKIS
-   ============================================================ */
-let invoiceDraft = [];
-
-function openInvoiceModal() {
-  if (!cart.length) {
-    alert('Tambah sekurang-kurangnya satu item ke troli POS dahulu.');
-    return;
-  }
-
-  invoiceDraft = JSON.parse(JSON.stringify(cart));
-  document.getElementById('invoiceAgentName').value = document.getElementById('custName').value || '';
-  document.getElementById('invoiceAgentPhone').value = document.getElementById('custPhone').value || '';
-  document.getElementById('invoicePaidAmount').value = 0;
-  document.getElementById('invoiceDiscount').value = 0;
-
-  renderInvoiceItems();
-  calculateInvoiceTotals();
-  loadInvoiceHistory();
-
-  document.getElementById('invoiceModal').classList.remove('hidden');
-  document.getElementById('invoiceModal').classList.add('flex');
+/* ===== INVOIS ===== */
+let invoiceDraft=[];
+function openInvoiceModal(){
+  if(!cart.length){alert('Tambah sekurang-kurangnya satu item ke troli POS dahulu.');return;}
+  invoiceDraft=JSON.parse(JSON.stringify(cart));
+  document.getElementById('invoiceAgentName').value=document.getElementById('custName').value||'';
+  document.getElementById('invoiceAgentPhone').value=document.getElementById('custPhone').value||'';
+  document.getElementById('invoicePaidAmount').value=0;document.getElementById('invoiceDiscount').value=0;
+  renderInvoiceItems();calculateInvoiceTotals();loadInvoiceHistory();
+  document.getElementById('invoiceModal').classList.remove('hidden');document.getElementById('invoiceModal').classList.add('flex');
+}
+function closeInvoiceModal(){document.getElementById('invoiceModal').classList.add('hidden');document.getElementById('invoiceModal').classList.remove('flex');}
+function renderInvoiceItems(){
+  document.getElementById('invoiceItemsBody').innerHTML=invoiceDraft.map((item,index)=>'<tr><td class="px-3 py-2">'+item.name+'</td><td class="px-3 py-2">'+item.size+'</td><td class="px-3 py-2">'+item.color+'</td><td class="px-3 py-2 text-center">'+item.qty+'</td><td class="px-3 py-2 text-right"><input type="number" min="0" step="0.01" value="'+item.price+'" oninput="invoiceDraft['+index+'].price=Number(this.value);calculateInvoiceTotals()" class="w-24 px-2 py-1 border border-greycair-300 rounded text-right text-xs"></td><td class="px-3 py-2 text-right font-bold" id="invoiceLineTotal'+index+'">RM 0.00</td></tr>').join('');
+}
+function calculateInvoiceTotals(){
+  const subtotal=invoiceDraft.reduce((s,i)=>s+i.price*i.qty,0),discount=Number(document.getElementById('invoiceDiscount').value)||0,paid=Number(document.getElementById('invoicePaidAmount').value)||0,total=Math.max(0,subtotal-discount);
+  invoiceDraft.forEach((item,index)=>{const el=document.getElementById('invoiceLineTotal'+index);if(el)el.innerText='RM '+(item.price*item.qty).toFixed(2);});
+  document.getElementById('invoiceTotalsText').innerText='Subtotal: RM '+subtotal.toFixed(2)+' | Diskaun: RM '+discount.toFixed(2)+' | Jumlah: RM '+total.toFixed(2)+' | Baki: RM '+Math.max(0,total-paid).toFixed(2);
+}
+function saveInvoice(){
+  const btn=document.getElementById('saveInvoiceBtn'),customer=document.getElementById('invoiceAgentName').value.trim();
+  if(!customer){alert('Nama ejen / stokis diperlukan.');return;}
+  if(!invoiceDraft.length){alert('Tiada item invois.');return;}
+  btn.disabled=true;
+  const invoice={recipientType:document.getElementById('invoiceRecipientType').value,agentName:customer,agentPhone:document.getElementById('invoiceAgentPhone').value.trim(),agentAddress:document.getElementById('invoiceAgentAddress').value.trim(),dueDate:document.getElementById('invoiceDueDate').value,discount:Number(document.getElementById('invoiceDiscount').value)||0,paidAmount:Number(document.getElementById('invoicePaidAmount').value)||0,deductStock:document.getElementById('invoiceDeductStock').checked,items:invoiceDraft};
+  secureProxyRequest('saveInvoice',{data:JSON.stringify(invoice)},function(result){
+    clearCart();invoiceDraft=[];loadInventoryFromGoogleSheet();loadInvoiceHistory();viewInvoice(result.invoice);btn.disabled=false;alert('Invois '+result.invoice.invoiceNo+' berjaya disimpan.');
+  },function(err){btn.disabled=false;alert('Gagal simpan invois: '+err.message);});
+}
+function loadInvoiceHistory(){
+  secureProxyRequest('getInvoiceHistory',{},function(result){
+    const history=result.invoiceHistory||[];window.__invoiceHistory=history;
+    document.getElementById('invoiceHistoryBody').innerHTML=history.map((invoice,index)=>'<tr><td class="px-3 py-2 font-mono font-bold text-purple-700">'+invoice.invoiceNo+'</td><td class="px-3 py-2">'+invoice.recipientType+' / '+invoice.agentName+'</td><td class="px-3 py-2 text-right">RM '+Number(invoice.grandTotal||0).toFixed(2)+'</td><td class="px-3 py-2">'+invoice.status+'</td><td class="px-3 py-2 text-center"><button onclick="viewInvoice(window.__invoiceHistory['+index+'])" class="px-2 py-1 bg-purple-700 text-white rounded text-[10px] font-bold">Papar</button></td></tr>').join('')||'<tr><td colspan="5" class="px-3 py-6 text-center text-slate-500">Tiada invois.</td></tr>';
+  },function(err){alert('Gagal memuat sejarah invois: '+err.message);});
+}
+function viewInvoice(invoice){
+  const area=document.getElementById('invoicePrintArea');
+  area.innerHTML='<div style="padding:20px;font-family:Arial,sans-serif;color:#000"><h2 style="margin:0">'+(receiptSettings.name||'EJAY COLLECTION')+'</h2><p style="margin:2px 0">'+(receiptSettings.address||'')+'</p><p style="margin:2px 0">'+(receiptSettings.phone||'')+'</p><hr><h3>INVOIS '+invoice.invoiceNo+'</h3><p>Tarikh: '+invoice.date+'<br>Tarikh Matang: '+(invoice.dueDate||'-')+'</p><p>Kepada: '+invoice.recipientType+' — '+invoice.agentName+'<br>'+(invoice.agentAddress||'')+'<br>'+(invoice.agentPhone||'')+'</p><table style="width:100%;border-collapse:collapse"><thead><tr><th style="border-bottom:1px solid #000;text-align:left">Produk</th><th style="border-bottom:1px solid #000;text-align:left">Saiz</th><th style="border-bottom:1px solid #000;text-align:left">Warna</th><th style="border-bottom:1px solid #000;text-align:center">Kuantiti</th><th style="border-bottom:1px solid #000;text-align:right">Harga</th><th style="border-bottom:1px solid #000;text-align:right">Jumlah</th></tr></thead><tbody>'+invoice.items.map(i=>'<tr><td style="padding:6px 0">'+i.name+'</td><td>'+i.size+'</td><td>'+i.color+'</td><td style="text-align:center">'+i.qty+'</td><td style="text-align:right">RM '+Number(i.price).toFixed(2)+'</td><td style="text-align:right">RM '+(i.price*i.qty).toFixed(2)+'</td></tr>').join('')+'</tbody></table><p style="margin-top:12px">Subtotal: RM '+Number(invoice.subtotal).toFixed(2)+'<br>Diskaun: RM '+Number(invoice.discount).toFixed(2)+'<br><b>Jumlah: RM '+Number(invoice.grandTotal).toFixed(2)+'</b><br>Status: '+invoice.status+'</p><p style="margin-top:20px">Invois dalaman ejen/stokis.</p></div>';
+  const preview=window.open('','_blank');preview.document.write('<html><head><title>'+invoice.invoiceNo+'</title></head><body>'+area.innerHTML+'</body></html>');preview.document.close();preview.print();
 }
 
-function closeInvoiceModal() {
-  document.getElementById('invoiceModal').classList.add('hidden');
-  document.getElementById('invoiceModal').classList.remove('flex');
-}
-
-function renderInvoiceItems() {
-  document.getElementById('invoiceItemsBody').innerHTML = invoiceDraft.map(function(item, index) {
-    return '<tr>' +
-      '<td class="px-3 py-2">' + item.name + '</td>' +
-      '<td class="px-3 py-2">' + item.size + '</td>' +
-      '<td class="px-3 py-2">' + item.color + '</td>' +
-      '<td class="px-3 py-2 text-center">' + item.qty + '</td>' +
-      '<td class="px-3 py-2 text-right"><input type="number" min="0" step="0.01" value="' + item.price + '" oninput="invoiceDraft[' + index + '].price=Number(this.value);calculateInvoiceTotals()" class="w-24 px-2 py-1 border border-greycair-300 rounded text-right text-xs"></td>' +
-      '<td class="px-3 py-2 text-right font-bold" id="invoiceLineTotal' + index + '">RM 0.00</td>' +
-    '</tr>';
-  }).join('');
-}
-
-function calculateInvoiceTotals() {
-  const subtotal = invoiceDraft.reduce(function(sum, item) { return sum + item.price * item.qty; }, 0);
-  const discount = Number(document.getElementById('invoiceDiscount').value) || 0;
-  const paid = Number(document.getElementById('invoicePaidAmount').value) || 0;
-  const total = Math.max(0, subtotal - discount);
-
-  invoiceDraft.forEach(function(item, index) {
-    const el = document.getElementById('invoiceLineTotal' + index);
-    if (el) el.innerText = 'RM ' + (item.price * item.qty).toFixed(2);
+/* ===== SYNC WEB: REPLACE INVENTORI WEB, KEKALKAN MANUAL ===== */
+syncWooCommerceProducts=function(){
+  if(!currentUser||currentUser.role!=='admin'){alert('Akses Dihadkan: Hanya Admin dibenarkan menyegerakkan produk.');return;}
+  const cfg=getWooProxyConfig();if(!cfg.url||!cfg.token){alert('Sila lengkapkan Tetapan Sambungan WooCommerce (URL & Token).');openApiModal();return;}
+  const syncIcon=document.getElementById('syncIcon');if(syncIcon)syncIcon.classList.add('fa-spin');
+  secureProxyRequest('products',{per_page:100,max_pages:10},function(result){
+    const data=result.products||[];
+    if(!data.length){alert('Sambungan berjaya tetapi tiada produk diterima daripada WooCommerce.');if(syncIcon)syncIcon.classList.remove('fa-spin');return;}
+    const manualProducts=products.filter(p=>p.isManual||!String(p.sku||'').startsWith('WC-'));
+    const merged=new Map();
+    data.forEach(p=>merged.set(String(p.sku||('WC-'+p.id)).toLowerCase(),p));
+    manualProducts.forEach(p=>{if(!merged.has(String(p.sku).toLowerCase()))merged.set(String(p.sku).toLowerCase(),p);});
+    products=Array.from(merged.values());
+    normalizeProducts();renderCategoryFilterButtons();renderProducts();populateProductFilterDropdown();populateExternalSaleModalDropdowns();saveProducts();
+    syncInventoryToGoogleSheet(function(){
+      if(syncIcon)syncIcon.classList.remove('fa-spin');
+      alert('Berjaya sync '+data.length+' produk dari website.\n\nInventori web telah dikemas kini.\nProduk manual tempatan dikekalkan.');
+    });
+  },function(err){
+    if(syncIcon)syncIcon.classList.remove('fa-spin');
+    alert('Ralat WooCommerce Proxy: '+err.message+'\n\nPastikan URL Web App betul, deployment aktif, dan POS API Token betul.');
   });
+  setTimeout(()=>{if(syncIcon)syncIcon.classList.remove('fa-spin');},15000);
+};
 
-  document.getElementById('invoiceTotalsText').innerText =
-    'Subtotal: RM ' + subtotal.toFixed(2) +
-    ' | Diskaun: RM ' + discount.toFixed(2) +
-    ' | Jumlah: RM ' + total.toFixed(2) +
-    ' | Baki: RM ' + Math.max(0, total - paid).toFixed(2);
-}
+/* ===== FOOTER RESIT ===== */
+const __originalLoadReceiptSettings=loadReceiptSettings;
+loadReceiptSettings=function(){
+  __originalLoadReceiptSettings();
+  const footer1=document.getElementById('rcpFooterLine1'),footer2=document.getElementById('rcpFooterLine2');
+  if(footer1)footer1.innerText=receiptSettings.footerLine1||'Terima Kasih Kerana Membeli!';
+  if(footer2)footer2.innerText=receiptSettings.footerLine2||'Sila Datang Lagi';
+};
+const __originalSaveReceiptSettings=saveReceiptSettings;
+saveReceiptSettings=function(){
+  receiptSettings.footerLine1=document.getElementById('settingFooterLine1').value.trim()||'Terima Kasih Kerana Membeli!';
+  receiptSettings.footerLine2=document.getElementById('settingFooterLine2').value.trim()||'Sila Datang Lagi';
+  __originalSaveReceiptSettings();
+};
 
-function saveInvoice() {
-  const saveBtn = document.getElementById('saveInvoiceBtn');
-  const customer = document.getElementById('invoiceAgentName').value.trim();
-
-  if (!customer) {
-    alert('Nama ejen / stokis diperlukan.');
-    return;
+/* ===== INIT TAMBAHAN ===== */
+window.addEventListener('load',function(){
+  const nav=document.querySelector('header .flex.items-center.space-x-2');
+  if(nav){
+    const invoiceBtn=document.createElement('button');
+    invoiceBtn.className='px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold rounded shadow-sm';
+    invoiceBtn.innerHTML='<i class="fa-solid fa-file-invoice mr-1.5"></i> Invois Ejen / Stokis';
+    invoiceBtn.onclick=openInvoiceModal;nav.appendChild(invoiceBtn);
   }
-
-  if (!invoiceDraft.length) {
-    alert('Tiada item invois.');
-    return;
+  const bar=document.getElementById('invSearch')?.parentElement;
+  if(bar){
+    const tools=document.createElement('div');tools.className='flex flex-wrap gap-2 mb-3';
+    tools.innerHTML='<button onclick="exportInventoryCSV(false)" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-export mr-1"></i> Eksport CSV</button><button onclick="exportInventoryCSV(true)" class="px-3 py-2 bg-white border border-greycair-300 text-slate-700 rounded-lg text-xs font-bold"><i class="fa-solid fa-file-csv mr-1"></i> Template CSV</button><button onclick="document.getElementById(\'inventoryCsvInput\').click()" class="px-3 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-import mr-1"></i> Import CSV</button><button onclick="loadInventoryFromGoogleSheet()" class="px-3 py-2 bg-white border border-greycair-300 text-slate-700 rounded-lg text-xs font-bold"><i class="fa-solid fa-arrows-rotate mr-1"></i> Muat Semula</button><input type="file" id="inventoryCsvInput" accept=".csv" class="hidden" onchange="importInventoryCSV(this.files[0]);this.value=\'\';">';
+    bar.parentElement.insertBefore(tools,bar);
   }
-
-  saveBtn.disabled = true;
-
-  const invoice = {
-    recipientType: document.getElementById('invoiceRecipientType').value,
-    agentName: customer,
-    agentPhone: document.getElementById('invoiceAgentPhone').value.trim(),
-    agentAddress: document.getElementById('invoiceAgentAddress').value.trim(),
-    dueDate: document.getElementById('invoiceDueDate').value,
-    discount: Number(document.getElementById('invoiceDiscount').value) || 0,
-    paidAmount: Number(document.getElementById('invoicePaidAmount').value) || 0,
-    deductStock: document.getElementById('invoiceDeductStock').checked,
-    items: invoiceDraft
-  };
-
-  secureProxyRequest('saveInvoice', { data: JSON.stringify(invoice) }, function(result) {
-    clearCart();
-    invoiceDraft = [];
-    loadInventoryFromGoogleSheet();
-    loadInvoiceHistory();
-    viewInvoice(result.invoice);
-    saveBtn.disabled = false;
-    alert('Invois ' + result.invoice.invoiceNo + ' berjaya disimpan.');
-  }, function(err) {
-    saveBtn.disabled = false;
-    alert('Gagal simpan invois: ' + err.message);
-  });
-}
-
-function loadInvoiceHistory() {
-  secureProxyRequest('getInvoiceHistory', {}, function(result) {
-    const history = result.invoiceHistory || [];
-    document.getElementById('invoiceHistoryBody').innerHTML = history.map(function(invoice, index) {
-      return '<tr>' +
-        '<td class="px-3 py-2 font-mono font-bold text-purple-700">' + invoice.invoiceNo + '</td>' +
-        '<td class="px-3 py-2">' + invoice.recipientType + ' / ' + invoice.agentName + '</td>' +
-        '<td class="px-3 py-2 text-right">RM ' + Number(invoice.grandTotal || 0).toFixed(2) + '</td>' +
-        '<td class="px-3 py-2">' + invoice.status + '</td>' +
-        '<td class="px-3 py-2 text-center"><button onclick="viewInvoice(history[' + index + '])" class="px-2 py-1 bg-purple-700 text-white rounded text-[10px] font-bold">Papar</button></td>' +
-      '</tr>';
-    }).join('') || '<tr><td colspan="5" class="px-3 py-6 text-center text-slate-500">Tiada invois.</td></tr>';
-
-    window.__invoiceHistory = history;
-  }, function(err) {
-    alert('Gagal memuat sejarah invois: ' + err.message);
-  });
-}
-
-function viewInvoice(invoice) {
-  const area = document.getElementById('invoicePrintArea');
-
-  area.innerHTML =
-    '<div style="padding:20px;font-family:Arial,sans-serif;color:#000">' +
-      '<h2 style="margin:0">' + (receiptSettings.name || 'EJAY COLLECTION') + '</h2>' +
-      '<p style="margin:2px 0">' + (receiptSettings.address || '') + '</p>' +
-      '<p style="margin:2px 0">' + (receiptSettings.phone || '') + '</p>' +
-      '<hr>' +
-      '<h3>INVOIS ' + invoice.invoiceNo + '</h3>' +
-      '<p>Tarikh: ' + invoice.date + '<br>Tarikh Matang: ' + (invoice.dueDate || '-') + '</p>' +
-      '<p>Kepada: ' + invoice.recipientType + ' — ' + invoice.agentName + '<br>' + (invoice.agentAddress || '') + '<br>' + (invoice.agentPhone || '') + '</p>' +
-      '<table style="width:100%;border-collapse:collapse">' +
-        '<thead><tr>' +
-          '<th style="border-bottom:1px solid #000;text-align:left">Produk</th>' +
-          '<th style="border-bottom:1px solid #000;text-align:left">Saiz</th>' +
-          '<th style="border-bottom:1px solid #000;text-align:left">Warna</th>' +
-          '<th style="border-bottom:1px solid #000;text-align:center">Kuantiti</th>' +
-          '<th style="border-bottom:1px solid #000;text-align:right">Harga</th>' +
-          '<th style="border-bottom:1px solid #000;text-align:right">Jumlah</th>' +
-        '</tr></thead><tbody>' +
-        invoice.items.map(function(item) {
-          return '<tr>' +
-            '<td style="padding:6px 0">' + item.name + '</td>' +
-            '<td>' + item.size + '</td>' +
-            '<td>' + item.color + '</td>' +
-            '<td style="text-align:center">' + item.qty + '</td>' +
-            '<td style="text-align:right">RM ' + Number(item.price).toFixed(2) + '</td>' +
-            '<td style="text-align:right">RM ' + (item.price * item.qty).toFixed(2) + '</td>' +
-          '</tr>';
-        }).join('') +
-      '</tbody></table>' +
-      '<p style="margin-top:12px">Subtotal: RM ' + Number(invoice.subtotal).toFixed(2) + '<br>' +
-      'Diskaun: RM ' + Number(invoice.discount).toFixed(2) + '<br>' +
-      '<b>Jumlah: RM ' + Number(invoice.grandTotal).toFixed(2) + '</b><br>' +
-      'Status: ' + invoice.status + '</p>' +
-      '<p style="margin-top:20px">Invois dalaman ejen/stokis.</p>' +
-    '</div>';
-
-  const preview = window.open('', '_blank');
-  preview.document.write('<html><head><title>' + invoice.invoiceNo + '</title></head><body>' + area.innerHTML + '</body></html>');
-  preview.document.close();
-  preview.print();
-}
-
-/* ============================================================
-   12. BUTANG TAMBAHAN
-   ============================================================ */
-window.addEventListener('load', function() {
-  const nav = document.querySelector('header .flex.items-center.space-x-2');
-  if (nav) {
-    const invoiceBtn = document.createElement('button');
-    invoiceBtn.className = 'px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs font-bold rounded shadow-sm';
-    invoiceBtn.innerHTML = '<i class="fa-solid fa-file-invoice mr-1.5"></i> Invois Ejen / Stokis';
-    invoiceBtn.onclick = openInvoiceModal;
-    nav.appendChild(invoiceBtn);
-  }
-
-  const inventoryBar = document.getElementById('invSearch')?.parentElement;
-  if (inventoryBar) {
-    const tools = document.createElement('div');
-    tools.className = 'flex flex-wrap gap-2 mb-3';
-    tools.innerHTML =
-      '<button onclick="exportInventoryCSV(false)" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-export mr-1"></i> Eksport CSV</button>' +
-      '<button onclick="exportInventoryCSV(true)" class="px-3 py-2 bg-white border border-greycair-300 text-slate-700 rounded-lg text-xs font-bold"><i class="fa-solid fa-file-csv mr-1"></i> Template CSV</button>' +
-      '<button onclick="document.getElementById(\'inventoryCsvInput\').click()" class="px-3 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-import mr-1"></i> Import CSV</button>' +
-      '<button onclick="loadInventoryFromGoogleSheet()" class="px-3 py-2 bg-white border border-greycair-300 text-slate-700 rounded-lg text-xs font-bold"><i class="fa-solid fa-arrows-rotate mr-1"></i> Muat Semula</button>' +
-      '<input type="file" id="inventoryCsvInput" accept=".csv" class="hidden" onchange="importInventoryCSV(this.files[0]); this.value=\'\';">';
-    inventoryBar.parentElement.insertBefore(tools, inventoryBar);
-  }
-
+  const type=document.getElementById('stockActionType');
+  if(type)type.addEventListener('change',updateStockActionInfo);
+  const size=document.getElementById('stockActionSize'),color=document.getElementById('stockActionColor');
+  if(size)size.addEventListener('change',updateStockActionInfo);
+  if(color)color.addEventListener('change',updateStockActionInfo);
   loadInventoryFromGoogleSheet();
 });
 </script>
