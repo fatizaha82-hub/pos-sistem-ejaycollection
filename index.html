@@ -4260,17 +4260,33 @@
                         // Modal masuk bukan aliran tunai keluar.
                         if (flowType === 'CAPITAL_IN') return;
 
-                        const category = String(exp.category || 'Belanja');
-                        const detail = String(exp.title || exp.recipientNote || exp.description || '').trim();
+                        const category = String(exp.category || 'Belanja').trim();
+                        // Keterangan boleh datang daripada medan berlainan mengikut versi rekod.
+                        // Abaikan nilai generik supaya keterangan sebenar tidak terlindung.
+                        const detailCandidates = [
+                            exp.recipientNote, exp.description, exp.keterangan, exp.penerangan,
+                            exp.notes, exp.note, exp.memo, exp.recipient, exp.PenerimaCatatan,
+                            exp.title, exp.descriptionText
+                        ];
+                        const genericDetails = new Set([
+                            '', 'belanja', 'perbelanjaan am', 'expense', 'tunai keluar',
+                            'modal pemilik', 'ambilan pemilik', category.toLowerCase()
+                        ]);
+                        let detail = '';
+                        for (const candidate of detailCandidates) {
+                            const candidateText = String(candidate == null ? '' : candidate).trim();
+                            if (candidateText && !genericDetails.has(candidateText.toLowerCase())) {
+                                detail = candidateText;
+                                break;
+                            }
+                        }
                         const description = detail && detail.toLowerCase() !== category.toLowerCase()
                             ? `${category} (${detail})` : category;
-                        const dateText = String(exp.date || '');
-                        const safe = value => value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+                        const safe = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
                         cfExpenseBreakdown.innerHTML += `
                             <div class="flex justify-between items-start gap-3 border-b border-slate-100 py-1">
                                 <div class="min-w-0">
                                     <div class="font-semibold text-slate-700 break-words">- ${safe(description)}</div>
-                                    ${dateText ? `<div class="text-[10px] text-slate-500">${safe(dateText)}</div>` : ''}
                                 </div>
                                 <span class="font-bold text-rose-600 whitespace-nowrap">(RM ${Number(exp.amount || exp.amountRM || 0).toFixed(2)})</span>
                             </div>
