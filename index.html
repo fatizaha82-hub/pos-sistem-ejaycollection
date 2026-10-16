@@ -78,6 +78,43 @@
                 font-size: 12px !important;
                 display: block !important;
             }
+            /* INVOIS EJEN / STOKIS - FORMAT STANDARD A4 */
+            @page invoicePage { size: A4 portrait; margin: 14mm; }
+            body.print-mode-invoice { background: #ffffff !important; }
+            body.print-mode-invoice #printable-invoice,
+            body.print-mode-invoice #printable-invoice * {
+                visibility: visible !important;
+            }
+            body.print-mode-invoice #printable-invoice {
+                display: block !important;
+                page: invoicePage !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 182mm !important;
+                min-height: 267mm !important;
+                box-sizing: border-box !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: #111827 !important;
+                background: #ffffff !important;
+                font-family: Arial, Helvetica, sans-serif !important;
+                font-size: 10pt !important;
+                line-height: 1.4 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body.print-mode-invoice #printable-invoice .invoice-topline { border-top: 5px solid #b08d24 !important; padding-top: 12px !important; }
+            body.print-mode-invoice #printable-invoice .invoice-title { font-size: 25pt !important; letter-spacing: 2px !important; font-weight: 800 !important; }
+            body.print-mode-invoice #printable-invoice table { width: 100% !important; border-collapse: collapse !important; }
+            body.print-mode-invoice #printable-invoice th { background: #f3f4f6 !important; color: #111827 !important; font-weight: 700 !important; }
+            body.print-mode-invoice #printable-invoice th,
+            body.print-mode-invoice #printable-invoice td { border: 1px solid #d1d5db !important; padding: 8px 7px !important; vertical-align: top !important; }
+            body.print-mode-invoice #printable-invoice .invoice-no-box { border: 1px solid #d1d5db !important; padding: 10px 12px !important; }
+            body.print-mode-invoice #printable-invoice .invoice-total-row td { border: none !important; padding: 4px 7px !important; }
+            body.print-mode-invoice #printable-invoice .invoice-grand-total { background: #f8f5e9 !important; border-top: 2px solid #b08d24 !important; font-size: 12pt !important; font-weight: 800 !important; }
+            body.print-mode-invoice #printable-invoice .invoice-small { font-size: 8.5pt !important; color: #4b5563 !important; }
+            body.print-mode-invoice #printable-invoice .invoice-signature { border-top: 1px solid #9ca3af !important; padding-top: 7px !important; margin-top: 38px !important; }
 
             /* CLOSING SLIP PRINTING (Z-REPORT) */
             body.print-mode-closing #printable-closing, 
@@ -1483,6 +1520,74 @@
         </div>
     </div>
 
+    <!-- INVOIS A4 KHAS UNTUK EJEN DAN STOKIS; RESIT THERMAL KEKAL BERASINGAN -->
+    <section id="printable-invoice" style="display:none;">
+        <div class="invoice-topline">
+            <div style="display:flex; justify-content:space-between; gap:24px; align-items:flex-start;">
+                <div style="flex:1;">
+                    <div id="invStoreName" style="font-size:19pt;font-weight:800;letter-spacing:.5px;">EJAY COLLECTION</div>
+                    <div id="invStoreWeb" style="font-size:9pt;margin-top:3px;">empiredaie.com.my</div>
+                    <div id="invStoreAddress" style="font-size:9pt;margin-top:3px;max-width:350px;">Alamat perniagaan</div>
+                    <div id="invStorePhone" style="font-size:9pt;margin-top:2px;">Tel: -</div>
+                </div>
+                <div style="text-align:right;min-width:190px;">
+                    <div class="invoice-title">INVOIS</div>
+                    <div class="invoice-no-box" style="margin-top:8px;text-align:left;">
+                        <div class="invoice-small">NO. INVOIS</div><div id="invNumber" style="font-size:13pt;font-weight:800;">INV-000000</div>
+                        <div style="margin-top:7px;"><span class="invoice-small">Tarikh:</span> <strong id="invDate">-</strong></div>
+                        <div><span class="invoice-small">Jenis pelanggan:</span> <strong id="invType">Ejen</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;gap:18px;margin:25px 0 20px;">
+            <div style="flex:1;border:1px solid #d1d5db;padding:12px 14px;min-height:82px;">
+                <div style="font-size:8pt;font-weight:700;letter-spacing:1px;color:#6b7280;margin-bottom:7px;">BIL KEPADA</div>
+                <div id="invCustomer" style="font-size:12pt;font-weight:700;">Nama pelanggan</div>
+                <div id="invPhone" style="margin-top:4px;">Telefon: -</div>
+            </div>
+            <div style="width:38%;border:1px solid #d1d5db;padding:12px 14px;min-height:82px;">
+                <div style="font-size:8pt;font-weight:700;letter-spacing:1px;color:#6b7280;margin-bottom:7px;">STATUS PEMBAYARAN</div>
+                <div id="invStatus" style="font-size:12pt;font-weight:800;">BELUM BAYAR</div>
+                <div id="invMethod" style="margin-top:4px;">Kaedah: -</div>
+            </div>
+        </div>
+        <table>
+            <thead><tr>
+                <th style="width:35px;text-align:center;">Bil.</th>
+                <th>Butiran / Keterangan Produk</th>
+                <th style="width:80px;text-align:right;">Harga Unit</th>
+                <th style="width:55px;text-align:center;">Kuantiti</th>
+                <th style="width:95px;text-align:right;">Jumlah (RM)</th>
+            </tr></thead>
+            <tbody id="invItems"></tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;gap:25px;margin-top:18px;align-items:flex-start;">
+            <div style="flex:1;max-width:55%;">
+                <div style="font-weight:700;margin-bottom:5px;">Maklumat pembayaran</div>
+                <div class="invoice-small">Sila nyatakan nombor invois semasa membuat bayaran.</div>
+                <div id="invPaymentNote" style="margin-top:9px;font-weight:700;">Status: Belum Bayar</div>
+                <div class="invoice-small" style="margin-top:14px;">Terima kasih kerana berurusan dengan Ejay Collection.</div>
+            </div>
+            <div style="width:42%;">
+                <table style="font-size:9.5pt;">
+                    <tbody>
+                        <tr class="invoice-total-row"><td>Subtotal</td><td id="invSubtotal" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row"><td>Diskaun</td><td id="invDiscount" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row invoice-grand-total"><td>JUMLAH INVOIS</td><td id="invGrandTotal" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row"><td>Jumlah diterima</td><td id="invPaid" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row"><td style="font-weight:700;">BAKI PERLU DIBAYAR</td><td id="invBalance" style="text-align:right;font-weight:800;white-space:nowrap;">RM 0.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:50px;margin-top:40px;">
+            <div style="width:45%;" class="invoice-signature"><div style="font-weight:700;">Disediakan oleh</div><div id="invStaff" class="invoice-small" style="margin-top:3px;">Staf POS</div></div>
+            <div style="width:45%;" class="invoice-signature"><div style="font-weight:700;">Pengesahan penerimaan pelanggan</div><div class="invoice-small" style="margin-top:3px;">Nama / Tandatangan / Tarikh</div></div>
+        </div>
+        <div style="border-top:1px solid #d1d5db;margin-top:28px;padding-top:8px;text-align:center;" class="invoice-small">Dokumen ini dijana oleh sistem POS Ejay Collection.</div>
+    </section>
+
     <!-- PRINTABLE CLOSING SLIP CONTAINER -->
     <div id="printable-closing" class="hidden">
         <div style="text-align: center; margin-bottom: 8px;">
@@ -2754,9 +2859,8 @@
 
         /* PRINT RECEIPT */
         function printReceipt(transaction) {
-            document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col print-mode-receipt";
-
             const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(transaction.orderType || ''));
+            document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col " + (isInvoice ? "print-mode-invoice" : "print-mode-receipt");
             document.getElementById('rcpDate').innerText = `Tarikh: ${transaction.date}`;
             document.getElementById('rcpOrderNo').innerText = `${isInvoice ? 'No Invois' : 'No Resit'}: #${transaction.invoiceNo || transaction.orderNo}`;
             document.getElementById('rcpOrderType').innerText = `${isInvoice ? 'INVOIS' : 'Jenis'}: ${transaction.orderType || 'Walk-In'}`;
@@ -2786,6 +2890,39 @@
             document.getElementById('rcpChange').innerText = isInvoice
                 ? `Baki perlu dibayar: RM ${Number(transaction.outstandingAmount !== undefined ? transaction.outstandingAmount : (transaction.paymentStatus === 'UNPAID' ? transaction.grandTotal : transaction.change || 0)).toFixed(2)}`
                 : `Baki: RM ${Number(transaction.change || 0).toFixed(2)}`;
+
+            if (isInvoice) {
+                const invText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value == null ? '-' : String(value); };
+                const money = value => 'RM ' + Number(value || 0).toFixed(2);
+                invText('invStoreName', document.getElementById('rcpStoreName').textContent || 'EJAY COLLECTION');
+                invText('invStoreWeb', document.getElementById('rcpStoreWeb').textContent || '');
+                invText('invStoreAddress', document.getElementById('rcpStoreAddress').textContent || '');
+                invText('invStorePhone', document.getElementById('rcpStorePhone').textContent || '');
+                invText('invNumber', transaction.invoiceNo || transaction.orderNo || '-');
+                invText('invDate', transaction.date || '-');
+                invText('invType', transaction.orderType || '-');
+                invText('invCustomer', transaction.custName || '-');
+                invText('invPhone', 'Telefon: ' + (transaction.custPhone || '-'));
+                const unpaid = transaction.paymentStatus === 'UNPAID' || Number(transaction.outstandingAmount || 0) > 0;
+                invText('invStatus', unpaid ? 'BELUM BAYAR (KREDIT)' : 'SUDAH BAYAR');
+                invText('invMethod', 'Kaedah: ' + (unpaid ? 'Kredit / Bayaran kemudian' : (transaction.paymentMethod || 'Tunai')));
+                invText('invPaymentNote', unpaid ? 'Sila jelaskan baki pembayaran seperti tertera.' : 'Bayaran telah diterima. Terima kasih.');
+                invText('invStaff', transaction.staffName || 'Staf POS');
+                const invoiceItems = document.getElementById('invItems');
+                invoiceItems.innerHTML = '';
+                (transaction.items || []).forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    const desc = [item.name, item.size && item.size !== '-' ? 'Saiz: ' + item.size : '', item.color && item.color !== '-' ? 'Warna: ' + item.color : ''].filter(Boolean).join(' | ');
+                    const values = [String(index + 1), desc, money(item.price), String(item.qty || 0), money(Number(item.price || 0) * Number(item.qty || 0))];
+                    values.forEach((value, col) => { const td = document.createElement('td'); td.textContent = value; if (col === 0 || col === 3) td.style.textAlign = 'center'; if (col === 2 || col === 4) td.style.textAlign = 'right'; tr.appendChild(td); });
+                    invoiceItems.appendChild(tr);
+                });
+                invText('invSubtotal', money(transaction.subtotal));
+                invText('invDiscount', money(transaction.discount));
+                invText('invGrandTotal', money(transaction.grandTotal));
+                invText('invPaid', money(transaction.amountPaid !== undefined ? transaction.amountPaid : (unpaid ? 0 : transaction.grandTotal)));
+                invText('invBalance', money(transaction.outstandingAmount !== undefined ? transaction.outstandingAmount : (unpaid ? transaction.grandTotal : 0)));
+            }
 
             window.print();
             
