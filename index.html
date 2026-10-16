@@ -1314,7 +1314,10 @@
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-2 mb-3">
-                    <input id="invSearch" oninput="renderInventoryTable()" placeholder="Cari produk / SKU..." class="flex-1 px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                    <div class="relative flex-1 min-w-0">
+                        <input id="invSearch" oninput="renderInventoryTable()" placeholder="Cari produk / SKU..." class="w-full px-3 pr-9 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                        <button id="clearInvSearchBtn" type="button" onclick="clearInventorySearch()" aria-label="Kosongkan carian inventori" title="Kosongkan carian" class="hidden absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-600 text-sm font-bold leading-none items-center justify-center">×</button>
+                    </div>
                     <select id="invFilterStatus" onchange="renderInventoryTable()" class="px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800">
                         <option value="ALL">Semua Status</option><option value="OK">Stok OK</option><option value="LOW">Stok Rendah</option><option value="OUT">Habis</option>
                     </select>
@@ -3231,8 +3234,22 @@
             document.getElementById('inventoryModal').classList.add('hidden');
             document.getElementById('inventoryModal').classList.remove('flex');
         }
+        function clearInventorySearch() {
+            const input = document.getElementById('invSearch');
+            if (!input) return;
+            input.value = '';
+            renderInventoryTable();
+            input.focus();
+        }
+
         function renderInventoryTable() {
-            const q=(document.getElementById('invSearch')?.value||'').toLowerCase().trim();
+            const searchInput = document.getElementById('invSearch');
+            const clearSearchBtn = document.getElementById('clearInvSearchBtn');
+            if (clearSearchBtn) {
+                clearSearchBtn.classList.toggle('hidden', !(searchInput && searchInput.value));
+                clearSearchBtn.classList.toggle('flex', !!(searchInput && searchInput.value));
+            }
+            const q=(searchInput?.value||'').toLowerCase().trim();
             const filter=document.getElementById('invFilterStatus')?.value||'ALL';
             const body=document.getElementById('inventoryTableBody'); if(!body)return;
             let units=0, low=0, out=0, value=0;
@@ -4021,7 +4038,13 @@
                 else posSales += amt;
             });
 
-            let cfTotalOutflow = cfExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let cfTotalOutflow = cfExpensesList.reduce((sum, exp) => {
+                const flowType = exp.flowType || (
+                    exp.category === 'Modal Pemilik' ? 'CAPITAL_IN' :
+                    exp.category === 'Ambilan Pemilik' ? 'OWNER_DRAW' : 'EXPENSE'
+                );
+                return flowType === 'CAPITAL_IN' ? sum : sum + Number(exp.amount || exp.amountRM || 0);
+            }, 0);
             let cfNetCashflow = cfTotalInflow - cfTotalOutflow;
 
             // Render ke UI Cashflow
@@ -4040,16 +4063,26 @@
                 if (cfExpensesList.length === 0) {
                     cfExpenseBreakdown.innerHTML = '<div class="text-slate-400 text-[11px]">- Tiada rekod perbelanjaan bagi tempoh ini.</div>';
                 } else {
-                    const expenseCatMap = {};
+                    // Paparkan setiap aliran keluar satu per satu; jangan gabungkan ikut kategori.
                     cfExpensesList.forEach(exp => {
-                        expenseCatMap[exp.category] = (expenseCatMap[exp.category] || 0) + Number(exp.amount || 0);
-                    });
+                        const flowType = exp.flowType || (
+                            exp.category === 'Modal Pemilik' ? 'CAPITAL_IN' :
+                            exp.category === 'Ambilan Pemilik' ? 'OWNER_DRAW' : 'EXPENSE'
+                        );
+                        // Modal masuk bukan aliran tunai keluar.
+                        if (flowType === 'CAPITAL_IN') return;
 
-                    Object.entries(expenseCatMap).forEach(([cat, val]) => {
+                        const category = String(exp.category || 'Belanja');
+                        const description = String(exp.title || exp.recipientNote || exp.description || exp.category || 'Perbelanjaan');
+                        const dateText = String(exp.date || '');
+                        const safe = value => value.replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
                         cfExpenseBreakdown.innerHTML += `
-                            <div class="flex justify-between">
-                                <span>- ${cat}</span>
-                                <span class="font-bold text-rose-600">(RM ${val.toFixed(2)})</span>
+                            <div class="flex justify-between items-start gap-3 border-b border-slate-100 py-1">
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-slate-700 break-words">- ${safe(description)}</div>
+                                    <div class="text-[10px] text-slate-500">${safe(category)}${dateText ? ' · ' + safe(dateText) : ''}</div>
+                                </div>
+                                <span class="font-bold text-rose-600 whitespace-nowrap">(RM ${Number(exp.amount || exp.amountRM || 0).toFixed(2)})</span>
                             </div>
                         `;
                     });
