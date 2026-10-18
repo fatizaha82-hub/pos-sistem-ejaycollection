@@ -1117,6 +1117,14 @@
                             </div>
                         </div>
 
+                        <div class="w-full sm:w-auto min-w-[180px]">
+                            <label class="block text-[10px] text-slate-500 mb-1 font-bold">Cari Produk:</label>
+                            <div class="relative">
+                                <input type="text" id="itemAnalysisSearch" oninput="filterItemAnalysisSearch()" placeholder="Cari nama produk..." class="w-full bg-white border border-greycair-300 rounded px-3 py-1.5 pr-9 text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                                <button id="clearItemAnalysisSearchBtn" type="button" onclick="clearItemAnalysisSearch()" aria-label="Kosongkan carian produk" title="Padam carian" style="display:none;position:absolute;right:6px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:9999px;background:#e2e8f0;color:#334155;font-size:17px;font-weight:700;line-height:18px;align-items:center;justify-content:center;cursor:pointer;">×</button>
+                            </div>
+                        </div>
+
                         <div class="flex items-center justify-between lg:justify-end gap-3 w-full lg:w-auto border-t lg:border-0 border-greycair-200 pt-2 lg:pt-0">
                             <div class="text-left lg:text-right">
                                 <span class="text-[11px] text-slate-500 block font-medium">Total Sales (Bulan Dipilih)</span>
@@ -4072,6 +4080,25 @@
         let currentFilteredProductStats = {};
         let currentFilteredTransactions = [];
 
+        // Carian produk dalam tab Laporan Mengikut Produk & Bulan dengan butang X.
+        function filterItemAnalysisSearch() {
+            const input = document.getElementById('itemAnalysisSearch');
+            const clearBtn = document.getElementById('clearItemAnalysisSearchBtn');
+            const query = String(input?.value || '').trim().toLowerCase();
+            if (clearBtn) clearBtn.style.display = query ? 'flex' : 'none';
+            document.querySelectorAll('#itemAnalysisTableBody tr').forEach(row => {
+                const text = String(row.textContent || '').toLowerCase();
+                row.style.display = (!query || text.includes(query)) ? '' : 'none';
+            });
+        }
+
+        function clearItemAnalysisSearch() {
+            const input = document.getElementById('itemAnalysisSearch');
+            if (input) input.value = '';
+            filterItemAnalysisSearch();
+            if (input) input.focus();
+        }
+
         // FUNGSI UPDATE FINANCIAL REPORTS (LOGIK PERAKANAN SELARAS 100%)
         function updateFinancialReports() {
             const startDate = document.getElementById('summaryStartDateFilter').value;
@@ -4631,7 +4658,8 @@
             // Modal Pemilik = modal masuk bersih + pelarasan modal pembukaan bagi rekod sejarah.
             // Nilai inventori tidak lagi digunakan sebagai modal.
 
-        }
+                    filterItemAnalysisSearch();
+}
 
         function exportTransactionsCSV() {
             if(currentFilteredTransactions.length === 0) {
