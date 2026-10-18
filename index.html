@@ -78,6 +78,43 @@
                 font-size: 12px !important;
                 display: block !important;
             }
+            /* INVOIS EJEN / STOKIS - FORMAT STANDARD A4 */
+            @page invoicePage { size: A4 portrait; margin: 14mm; }
+            body.print-mode-invoice { background: #ffffff !important; }
+            body.print-mode-invoice #printable-invoice,
+            body.print-mode-invoice #printable-invoice * {
+                visibility: visible !important;
+            }
+            body.print-mode-invoice #printable-invoice {
+                display: block !important;
+                page: invoicePage !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 182mm !important;
+                min-height: 267mm !important;
+                box-sizing: border-box !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: #111827 !important;
+                background: #ffffff !important;
+                font-family: Arial, Helvetica, sans-serif !important;
+                font-size: 10pt !important;
+                line-height: 1.4 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body.print-mode-invoice #printable-invoice .invoice-topline { border-top: 5px solid #b08d24 !important; padding-top: 12px !important; }
+            body.print-mode-invoice #printable-invoice .invoice-title { font-size: 25pt !important; letter-spacing: 2px !important; font-weight: 800 !important; }
+            body.print-mode-invoice #printable-invoice table { width: 100% !important; border-collapse: collapse !important; }
+            body.print-mode-invoice #printable-invoice th { background: #f3f4f6 !important; color: #111827 !important; font-weight: 700 !important; }
+            body.print-mode-invoice #printable-invoice th,
+            body.print-mode-invoice #printable-invoice td { border: 1px solid #d1d5db !important; padding: 8px 7px !important; vertical-align: top !important; }
+            body.print-mode-invoice #printable-invoice .invoice-no-box { border: 1px solid #d1d5db !important; padding: 10px 12px !important; }
+            body.print-mode-invoice #printable-invoice .invoice-total-row td { border: none !important; padding: 4px 7px !important; }
+            body.print-mode-invoice #printable-invoice .invoice-grand-total { background: #f8f5e9 !important; border-top: 2px solid #b08d24 !important; font-size: 12pt !important; font-weight: 800 !important; }
+            body.print-mode-invoice #printable-invoice .invoice-small { font-size: 8.5pt !important; color: #4b5563 !important; }
+            body.print-mode-invoice #printable-invoice .invoice-signature { border-top: 1px solid #9ca3af !important; padding-top: 7px !important; margin-top: 38px !important; }
 
             /* CLOSING SLIP PRINTING (Z-REPORT) */
             body.print-mode-closing #printable-closing, 
@@ -335,11 +372,26 @@
                     
                     <div class="flex items-center space-x-3 text-xs font-semibold text-slate-700">
                         <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="orderType" value="Walk-In" checked class="mr-1 accent-gold-600"> Walk-In
+                            <input type="radio" name="orderType" value="Walk-In" checked onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Walk-In
                         </label>
                         <label class="flex items-center cursor-pointer">
-                            <input type="radio" name="orderType" value="Online" class="mr-1 accent-gold-600"> Online
+                            <input type="radio" name="orderType" value="Online" onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Online
                         </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="orderType" value="Ejen" onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Ejen
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="orderType" value="Stokis" onchange="updateInvoicePaymentUI()" class="mr-1 accent-gold-600"> Stokis
+                        </label>
+                    </div>
+
+                    <div id="invoicePaymentStatusGroup" class="hidden mt-2 p-2 bg-white border border-gold-300 rounded-lg">
+                        <label for="invoicePaymentStatus" class="block text-[11px] font-bold text-slate-700 mb-1">Status Invois Ejen / Stokis</label>
+                        <select id="invoicePaymentStatus" onchange="updateInvoicePaymentUI()" class="w-full px-2 py-2 border border-greycair-300 rounded text-xs bg-white">
+                            <option value="PAID">Sudah Bayar</option>
+                            <option value="UNPAID">Belum Bayar (Kredit)</option>
+                        </select>
+                        <p id="invoicePaymentHint" class="text-[10px] text-slate-500 mt-1">Invois direkod sebagai telah dibayar.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-1.5">
@@ -617,6 +669,11 @@
                 <div>
                     <label class="block text-xs text-slate-700 mb-1">No. Telefon Butik:</label>
                     <input type="text" id="settingBoutiquePhone" class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-purple-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-700 mb-1">Footer Resit (boleh ubah bila-bila masa):</label>
+                    <textarea id="settingReceiptFooter" rows="3" placeholder="Contoh: Jazakumullahu khairan. Sila datang lagi bila-bila masa." class="w-full px-3 py-2 bg-greycair-50 border border-greycair-300 rounded text-xs text-slate-800 focus:outline-none focus:border-purple-500"></textarea>
+                    <p class="text-[10px] text-slate-500 mt-1">Teks ini akan dipaparkan di bahagian bawah resit.</p>
                 </div>
             </div>
 
@@ -1303,22 +1360,28 @@
                 </div>
 
                 <div class="flex flex-col lg:flex-row gap-2 mb-3">
-                    <input id="invSearch" oninput="renderInventoryTable()" placeholder="Cari produk / SKU..." class="flex-1 px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                    <div class="relative flex-1 min-w-0">
+                        <input id="invSearch" oninput="renderInventoryTable(); updateInventoryClearButton();" placeholder="Cari produk / SKU..." class="w-full px-3 pr-10 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-gold-500">
+                        <button id="clearInvSearchBtn" type="button" onclick="clearInventorySearch()" aria-label="Kosongkan carian inventori" title="Padam carian" style="display:none;position:absolute;right:7px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:9999px;background:#e2e8f0;color:#334155;font-size:18px;font-weight:700;line-height:20px;align-items:center;justify-content:center;cursor:pointer;z-index:10;">×</button>
+                    </div>
                     <select id="invFilterStatus" onchange="renderInventoryTable()" class="px-3 py-2 bg-greycair-50 border border-greycair-300 rounded-lg text-xs text-slate-800">
                         <option value="ALL">Semua Status</option><option value="OK">Stok OK</option><option value="LOW">Stok Rendah</option><option value="OUT">Habis</option>
                     </select>
-                    <button onclick="openAddProductModal()" class="px-4 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Produk Baharu</button>
+                    <button onclick="openAddProductModal()" class="px-4 py-2 bg-gold-500 hover:bg-gold-600 text-white rounded-lg text-xs font-bold shadow-sm"><i class="fa-solid fa-plus mr-1"></i> Tambah Produk</button>
+                    <button onclick="exportInventoryCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-export mr-1"></i> Eksport CSV</button>
+                    <button onclick="document.getElementById('inventoryImportFile').click()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-import mr-1"></i> Import CSV</button>
+                    <input id="inventoryImportFile" type="file" accept=".csv,text/csv" class="hidden" onchange="importInventoryCSV(event)">
                     <button onclick="openStockMovementModal()" class="px-4 py-2 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded-lg text-xs font-bold border border-greycair-300"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Pergerakan Stok</button>
                 </div>
 
                 <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
                     <div class="font-bold text-xs text-amber-900"><i class="fa-solid fa-file-import mr-1"></i> Import Produk Pukal (TikTok Seller / WooCommerce / Google Sheets)</div>
-                    <p class="text-[11px] text-amber-800">Copy baris tajuk dan data daripada Excel/Google Sheets, kemudian paste di sini. Susunan lajur boleh berbeza jika nama tajuk dikenal pasti. SKU digunakan untuk mengelakkan produk berganda.</p>
-                    <textarea id="inventoryBulkPaste" rows="4" placeholder="ProductID | SKU | Nama Produk | Kategori | Harga | Kos | Stok Semasa | Stok Minimum | Saiz | Warna" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs text-slate-800"></textarea>
+                    <p class="text-[11px] text-amber-800">Salin tajuk lajur bersama data daripada Excel/Google Sheets dan tampal di sini. SKU digunakan untuk mengemas kini produk sedia ada atau menambah produk baharu.</p>
+                    <textarea id="inventoryBulkPaste" rows="4" placeholder="SKU | Nama Produk | Kategori | Harga | Kos | Stok Semasa | Stok Minimum | Saiz | Warna" class="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg text-xs text-slate-800"></textarea>
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="importInventoryPaste()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-import mr-1"></i> Import & Simpan Inventori</button>
-                        <button onclick="loadInventoryFromCloud(true)" class="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Muat Semula dari Google Sheet</button>
-                        <span id="inventoryCloudStatus" class="self-center text-[11px] text-slate-500">Inventori disimpan dalam Google Sheet.</span>
+                        <button type="button" onclick="importInventoryPaste()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-file-import mr-1"></i> Import & Simpan Inventori</button>
+                        <button type="button" onclick="loadInventoryFromCloud(true)" class="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-lg text-xs font-bold"><i class="fa-solid fa-cloud-arrow-down mr-1"></i> Muat Semula dari Google Sheet</button>
+                        <span id="inventoryCloudStatus" class="self-center text-[11px] text-slate-500">Inventori disimpan pada peranti sehingga Google Sheet disambungkan.</span>
                     </div>
                 </div>
 
@@ -1463,10 +1526,78 @@
             <p style="margin: 2px 0;" id="rcpChange">Baki: RM 0.00</p>
         </div>
         <div style="text-align: center; margin-top: 15px; color: #000; font-size: 11px;">
-            <p style="margin: 2px 0;">Terima Kasih Kerana Membeli!</p>
-            <p style="margin: 2px 0;">Sila Datang Lagi</p>
+            <p style="margin: 2px 0;" id="rcpFooterLine1">Terima Kasih Kerana Membeli!</p>
+            <p style="margin: 2px 0; white-space: pre-line;" id="rcpFooterLine2">Jazakumullahu khairan. Sila datang lagi bila-bila masa.</p>
         </div>
     </div>
+
+    <!-- INVOIS A4 KHAS UNTUK EJEN DAN STOKIS; RESIT THERMAL KEKAL BERASINGAN -->
+    <section id="printable-invoice" style="display:none;">
+        <div class="invoice-topline">
+            <div style="display:flex; justify-content:space-between; gap:24px; align-items:flex-start;">
+                <div style="flex:1;">
+                    <div id="invStoreName" style="font-size:19pt;font-weight:800;letter-spacing:.5px;">EJAY COLLECTION</div>
+                    <div id="invStoreWeb" style="font-size:9pt;margin-top:3px;">empiredaie.com.my</div>
+                    <div id="invStoreAddress" style="font-size:9pt;margin-top:3px;max-width:350px;">Alamat perniagaan</div>
+                    <div id="invStorePhone" style="font-size:9pt;margin-top:2px;">Tel: -</div>
+                </div>
+                <div style="text-align:right;min-width:190px;">
+                    <div class="invoice-title">INVOIS</div>
+                    <div class="invoice-no-box" style="margin-top:8px;text-align:left;">
+                        <div class="invoice-small">NO. INVOIS</div><div id="invNumber" style="font-size:13pt;font-weight:800;">INV-000000</div>
+                        <div style="margin-top:7px;"><span class="invoice-small">Tarikh:</span> <strong id="invDate">-</strong></div>
+                        <div><span class="invoice-small">Jenis pelanggan:</span> <strong id="invType">Ejen</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;gap:18px;margin:25px 0 20px;">
+            <div style="flex:1;border:1px solid #d1d5db;padding:12px 14px;min-height:82px;">
+                <div style="font-size:8pt;font-weight:700;letter-spacing:1px;color:#6b7280;margin-bottom:7px;">BIL KEPADA</div>
+                <div id="invCustomer" style="font-size:12pt;font-weight:700;">Nama pelanggan</div>
+                <div id="invPhone" style="margin-top:4px;">Telefon: -</div>
+            </div>
+            <div style="width:38%;border:1px solid #d1d5db;padding:12px 14px;min-height:82px;">
+                <div style="font-size:8pt;font-weight:700;letter-spacing:1px;color:#6b7280;margin-bottom:7px;">STATUS PEMBAYARAN</div>
+                <div id="invStatus" style="font-size:12pt;font-weight:800;">BELUM BAYAR</div>
+                <div id="invMethod" style="margin-top:4px;">Kaedah: -</div>
+            </div>
+        </div>
+        <table>
+            <thead><tr>
+                <th style="width:35px;text-align:center;">Bil.</th>
+                <th>Butiran / Keterangan Produk</th>
+                <th style="width:80px;text-align:right;">Harga Unit</th>
+                <th style="width:55px;text-align:center;">Kuantiti</th>
+                <th style="width:95px;text-align:right;">Jumlah (RM)</th>
+            </tr></thead>
+            <tbody id="invItems"></tbody>
+        </table>
+        <div style="display:flex;justify-content:space-between;gap:25px;margin-top:18px;align-items:flex-start;">
+            <div style="flex:1;max-width:55%;">
+                <div style="font-weight:700;margin-bottom:5px;">Maklumat pembayaran</div>
+                <div class="invoice-small">Sila nyatakan nombor invois semasa membuat bayaran.</div>
+                <div id="invPaymentNote" style="margin-top:9px;font-weight:700;">Status: Belum Bayar</div>
+                <div class="invoice-small" style="margin-top:14px;">Terima kasih kerana berurusan dengan Ejay Collection.</div>
+            </div>
+            <div style="width:42%;">
+                <table style="font-size:9.5pt;">
+                    <tbody>
+                        <tr class="invoice-total-row"><td>Subtotal</td><td id="invSubtotal" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row"><td>Diskaun</td><td id="invDiscount" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row invoice-grand-total"><td>JUMLAH INVOIS</td><td id="invGrandTotal" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row"><td>Jumlah diterima</td><td id="invPaid" style="text-align:right;white-space:nowrap;">RM 0.00</td></tr>
+                        <tr class="invoice-total-row"><td style="font-weight:700;">BAKI PERLU DIBAYAR</td><td id="invBalance" style="text-align:right;font-weight:800;white-space:nowrap;">RM 0.00</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:50px;margin-top:40px;">
+            <div style="width:45%;" class="invoice-signature"><div style="font-weight:700;">Disediakan oleh</div><div id="invStaff" class="invoice-small" style="margin-top:3px;">Staf POS</div></div>
+            <div style="width:45%;" class="invoice-signature"><div style="font-weight:700;">Pengesahan penerimaan pelanggan</div><div class="invoice-small" style="margin-top:3px;">Nama / Tandatangan / Tarikh</div></div>
+        </div>
+        <div style="border-top:1px solid #d1d5db;margin-top:28px;padding-top:8px;text-align:center;" class="invoice-small">Dokumen ini dijana oleh sistem POS Ejay Collection.</div>
+    </section>
 
     <!-- PRINTABLE CLOSING SLIP CONTAINER -->
     <div id="printable-closing" class="hidden">
@@ -1562,7 +1693,8 @@
             name: 'EJAY COLLECTION',
             web: 'empiredaie.com.my',
             address: 'No. 123, Jalan Daie Utama, Pusat Perniagaan Empire, 43000 Kajang, Selangor',
-            phone: '+6012-345 6789'
+            phone: '+6012-345 6789',
+            footer: 'Terima kasih kerana membeli!\nJazakumullahu khairan. Sila datang lagi bila-bila masa.'
         };
 
         let currentClosingData = {
@@ -1634,10 +1766,11 @@
             renderCategoryFilterButtons();
             renderProducts();
             renderCart();
+            updateInvoicePaymentUI();
             populateProductFilterDropdown();
             populateExternalSaleModalDropdowns();
-            fetchSettingsFromGSheet();
-            loadInventoryFromCloud(false);
+            secureProxyRequest('setupPosSheets', {}, function() { console.log('Tab POS Google Sheet disediakan.'); loadInventoryFromCloud(false); }, function(err) { console.warn('Setup tab POS:', err.message); });
+            fetchSettingsFromGSheet();     
             fetchSalesHistoryFromGSheet(); 
             fetchExpenseHistoryFromGSheet();
             initInactivityTracker();
@@ -1921,7 +2054,8 @@
                     stock: Math.max(0, Number(p.stock ?? 0)),
                     minStock: Number(p.minStock ?? 5),
                     sizes: p.sizes && p.sizes.length ? p.sizes : (p.category?.toLowerCase().includes('perfume') ? ['30ml', '50ml', '100ml'] : ['Free Size']),
-                    colors: p.colors && p.colors.length ? p.colors : ['Piawai']
+                    colors: p.colors && p.colors.length ? p.colors : ['Piawai'],
+                    variantStocks: p.variantStocks && typeof p.variantStocks === 'object' ? p.variantStocks : {}
                 };
             });
             saveProducts();
@@ -1946,18 +2080,25 @@
         function loadInventoryFromCloud(showMessage = false) {
             secureProxyRequest('getInventory', {}, function(result) {
                 const cloudRows = Array.isArray(result.inventory) ? result.inventory : [];
-                const cloudProducts = cloudRows.map((r, i) => ({
-                    id: r.id !== undefined && r.id !== null && String(r.id) !== '' ? (isNaN(Number(r.id)) ? String(r.id) : Number(r.id)) : ('IMP-' + (r.sku || i + 1)),
-                    sku: String(r.sku || ('EC-' + String(i + 1).padStart(4, '0'))),
-                    name: String(r.name || ''), category: String(r.category || 'Aksesori'),
-                    price: Number(r.price) || 0, cost: Number(r.cost) || 0, stock: Math.max(0, Number(r.stock) || 0),
-                    minStock: Number(r.minStock) || 5,
-                    sizes: Array.isArray(r.sizes) ? r.sizes : String(r.sizes || 'Free Size').split(',').map(x => x.trim()).filter(Boolean),
-                    colors: Array.isArray(r.colors) ? r.colors : String(r.colors || 'Piawai').split(',').map(x => x.trim()).filter(Boolean),
-                    image: r.image || '', isManual: !String(r.sku || '').startsWith('WC-'), source: 'Google Sheets'
-                })).filter(p => p.name);
+                const localByKey = new Map(products.map(p => [String(p.sku || p.id).toLowerCase(), p]));
+                const cloudProducts = cloudRows.map((r, i) => {
+                    const key = String(r.sku || r.id || '').toLowerCase();
+                    const local = localByKey.get(key) || {};
+                    return {
+                        ...local,
+                        id: r.id !== undefined && r.id !== null && String(r.id) !== '' ? (isNaN(Number(r.id)) ? String(r.id) : Number(r.id)) : (local.id || ('IMP-' + (r.sku || i + 1))),
+                        sku: String(r.sku || local.sku || ('EC-' + String(i + 1).padStart(4, '0'))),
+                        name: String(r.name || local.name || ''), category: String(r.category || local.category || 'Aksesori'),
+                        price: Number(r.price ?? local.price) || 0, cost: Number(r.cost ?? local.cost) || 0,
+                        stock: Math.max(0, Number(r.stock ?? local.stock) || 0),
+                        minStock: Number(r.minStock ?? local.minStock) || 5,
+                        sizes: Array.isArray(r.sizes) ? r.sizes : String(r.sizes || local.sizes || 'Free Size').split(',').map(x => x.trim()).filter(Boolean),
+                        colors: Array.isArray(r.colors) ? r.colors : String(r.colors || local.colors || 'Piawai').split(',').map(x => x.trim()).filter(Boolean),
+                        image: local.image || r.image || '', isManual: local.isManual !== undefined ? local.isManual : !String(r.sku || '').startsWith('WC-'),
+                        source: 'Google Sheets'
+                    };
+                }).filter(p => p.name);
                 const merged = new Map();
-                // Produk cloud diutamakan; produk tempatan yang belum ada di cloud dikekalkan.
                 products.forEach(p => merged.set(String(p.sku || p.id).toLowerCase(), p));
                 cloudProducts.forEach(p => merged.set(String(p.sku || p.id).toLowerCase(), p));
                 products = Array.from(merged.values());
@@ -1965,10 +2106,10 @@
                 normalizeProducts();
                 renderCategoryFilterButtons(); renderProducts(); renderInventoryTable();
                 populateProductFilterDropdown(); populateExternalSaleModalDropdowns();
-                if (showMessage) alert('Inventori berjaya dimuat semula: ' + cloudProducts.length + ' produk dari Google Sheet.');
                 const status = document.getElementById('inventoryCloudStatus');
                 if (status) status.innerText = 'Disambungkan ke Google Sheet: ' + cloudProducts.length + ' produk cloud.';
-                // Simpan gabungan supaya produk local yang masih sah turut kekal dalam cloud.
+                if (showMessage) alert('Inventori dimuat semula. Produk Google Sheet: ' + cloudProducts.length + '.');
+                // Pastikan gabungan rekod tempatan dan cloud disegerakkan selepas pemuatan.
                 saveProducts();
             }, function(err) {
                 inventoryCloudReady = false;
@@ -1980,7 +2121,7 @@
         }
 
         function importInventoryPaste() {
-            const raw = (document.getElementById('inventoryBulkPaste').value || '').trim();
+            const raw = (document.getElementById('inventoryBulkPaste')?.value || '').trim();
             if (!raw) { alert('Sila paste data produk terlebih dahulu.'); return; }
             const lines = raw.split(/\r?\n/).filter(line => line.trim());
             if (lines.length < 2) { alert('Data perlu mengandungi baris tajuk dan sekurang-kurangnya satu rekod produk.'); return; }
@@ -2021,7 +2162,7 @@
             populateProductFilterDropdown(); populateExternalSaleModalDropdowns();
             saveProducts();
             document.getElementById('inventoryBulkPaste').value = '';
-            alert('Import selesai. Produk baharu: ' + added + '; produk dikemas kini: ' + updated + '. Data sedang disimpan ke Google Sheet.');
+            alert('Import selesai. Produk baharu: ' + added + '; produk dikemas kini: ' + updated + '.');
         }
         function getStockStatus(p) { return p.stock <= 0 ? 'OUT' : (p.stock <= p.minStock ? 'LOW' : 'OK'); }
         function statusBadge(p) {
@@ -2233,6 +2374,7 @@
             document.getElementById('settingBoutiqueWeb').value = receiptSettings.web;
             document.getElementById('settingBoutiqueAddress').value = receiptSettings.address;
             document.getElementById('settingBoutiquePhone').value = receiptSettings.phone;
+            document.getElementById('settingReceiptFooter').value = receiptSettings.footer || 'Terima kasih kerana membeli!\nJazakumullahu khairan. Sila datang lagi bila-bila masa.';
             document.getElementById('receiptSettingsModal').classList.remove('hidden');
         }
         function closeReceiptSettingsModal() { document.getElementById('receiptSettingsModal').classList.add('hidden'); }
@@ -2242,6 +2384,7 @@
             receiptSettings.web = document.getElementById('settingBoutiqueWeb').value.trim();
             receiptSettings.address = document.getElementById('settingBoutiqueAddress').value.trim();
             receiptSettings.phone = document.getElementById('settingBoutiquePhone').value.trim();
+            receiptSettings.footer = document.getElementById('settingReceiptFooter').value.trim();
 
             saveSettingsToGSheet('receiptSettings', receiptSettings, function() {
                 loadReceiptSettings();
@@ -2258,6 +2401,9 @@
             document.getElementById('rcpStoreWeb').innerText = receiptSettings.web;
             document.getElementById('rcpStoreAddress').innerText = receiptSettings.address;
             document.getElementById('rcpStorePhone').innerText = `Tel: ${receiptSettings.phone}`;
+            const footerLines = String(receiptSettings.footer || 'Terima kasih kerana membeli!\nJazakumullahu khairan. Sila datang lagi bila-bila masa.').split('\n');
+            document.getElementById('rcpFooterLine1').innerText = footerLines.shift() || '';
+            document.getElementById('rcpFooterLine2').innerText = footerLines.join('\n');
         }
 
         // STAFF MANAGEMENT MODAL
@@ -2445,20 +2591,21 @@
                                 <div class="grid grid-cols-2 gap-1.5 my-1.5 pt-1.5 border-t border-greycair-200">
                                     <div>
                                         <label class="block text-[9px] text-slate-500">${sizeLabel}</label>
-                                        <select id="size_select_${prod.id}" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
+                                        <select id="size_select_${prod.id}" onchange="showSelectedProductStock(${prod.id})" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
                                             ${sizeOptions}
                                         </select>
                                     </div>
                                     <div>
                                         <label class="block text-[9px] text-slate-500">${colorLabel}</label>
-                                        <select id="color_select_${prod.id}" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
+                                        <select id="color_select_${prod.id}" onchange="showSelectedProductStock(${prod.id})" class="w-full bg-greycair-50 border border-greycair-300 text-[10px] text-slate-800 rounded px-1 py-0.5 focus:outline-none focus:border-gold-500">
                                             ${colorOptions}
                                         </select>
                                     </div>
                                 </div>
+                                <div id="selected_stock_${prod.id}" class="mt-1.5 px-2 py-1 rounded bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-700">Stok tersedia: ${Number(prod.stock || 0)} unit</div>
                             </div>
 
-                            <button onclick="addToCart(${prod.id})" ${prod.stock <= 0 ? 'disabled' : ''} class="w-full py-1.5 mt-1 ${prod.stock <= 0 ? 'bg-greycair-200 text-slate-400 cursor-not-allowed' : 'bg-gold-500 hover:bg-gold-600 text-white'} rounded font-bold text-xs shadow-sm transition flex items-center justify-center">
+                            <button data-add-product-id="${String(prod.id)}" onclick="addToCart(${prod.id})" class="w-full py-1.5 mt-1 bg-gold-500 hover:bg-gold-600 text-white rounded font-bold text-xs shadow-sm transition flex items-center justify-center">
                                 <i class="fa-solid ${prod.stock <= 0 ? 'fa-ban' : 'fa-plus'} mr-1"></i> ${prod.stock <= 0 ? 'Stok Habis' : 'Tambah Ke Troli'}
                             </button>
                         </div>
@@ -2466,6 +2613,7 @@
                 `;
             });
 
+            paginatedItems.forEach(prod => showSelectedProductStock(prod.id));
             renderPagination(totalItems, startIndex, paginatedItems.length);
         }
 
@@ -2526,6 +2674,56 @@
             renderProducts(); 
         }
 
+        // Stok mengikut gabungan produk + saiz + warna.
+        function variantStockKey(size, color) { return String(size || 'Free Size') + '||' + String(color || 'Piawai'); }
+        function getVariantStock(product, size, color) {
+            const key = variantStockKey(size, color);
+            const map = product && product.variantStocks && typeof product.variantStocks === 'object' ? product.variantStocks : {};
+            return Object.prototype.hasOwnProperty.call(map, key) ? Math.max(0, Number(map[key]) || 0) : Math.max(0, Number(product && product.stock) || 0);
+        }
+        function getSelectedVariant(productId) {
+            return { size: document.getElementById(`size_select_${productId}`)?.value || 'Free Size', color: document.getElementById(`color_select_${productId}`)?.value || 'Piawai' };
+        }
+        function getVariantStockTotal(product) {
+            const map = product && product.variantStocks && typeof product.variantStocks === 'object' ? product.variantStocks : {};
+            if (!Object.keys(map).length) return Math.max(0, Number(product.stock) || 0);
+            return Object.values(map).reduce((sum, n) => sum + Math.max(0, Number(n) || 0), 0);
+        }
+        function initializeVariantStocks(product, selectedSize, selectedColor) {
+            if (!product.variantStocks || typeof product.variantStocks !== 'object') product.variantStocks = {};
+            if (!Object.keys(product.variantStocks).length) {
+                // Migrasi stok lama: baki sedia ada diletakkan pada variasi yang sedang dipilih.
+                const allSizes = product.sizes && product.sizes.length ? product.sizes : ['Free Size'];
+                const allColors = product.colors && product.colors.length ? product.colors : ['Piawai'];
+                allSizes.forEach(sz => allColors.forEach(cl => { product.variantStocks[variantStockKey(sz, cl)] = 0; }));
+                product.variantStocks[variantStockKey(selectedSize, selectedColor)] = Math.max(0, Number(product.stock) || 0);
+            }
+        }
+        function showSelectedProductStock(productId) {
+            const product = products.find(p => String(p.id) === String(productId));
+            const stockEl = document.getElementById(`selected_stock_${productId}`);
+            const addBtn = document.querySelector(`button[data-add-product-id="${String(productId)}"]`);
+            if (!product || !stockEl) return;
+            const selected = getSelectedVariant(productId);
+            const map = product.variantStocks && typeof product.variantStocks === 'object' ? product.variantStocks : {};
+            const key = variantStockKey(selected.size, selected.color);
+            const isUnallocated = !Object.keys(map).length || !Object.prototype.hasOwnProperty.call(map, key);
+            const stock = getVariantStock(product, selected.size, selected.color);
+            stockEl.textContent = isUnallocated ? `Stok variasi belum diperincikan • Jumlah produk: ${stock} unit` : `Stok ${selected.size} / ${selected.color}: ${stock} unit`;
+            stockEl.className = 'mt-1.5 px-2 py-1 rounded border text-[10px] font-bold ' + (stock <= 0 ? 'bg-red-50 border-red-200 text-red-700' : (stock <= Number(product.minStock || 5) ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'));
+            if (addBtn) { addBtn.disabled = stock <= 0; addBtn.className = `w-full py-1.5 mt-1 ${stock <= 0 ? 'bg-greycair-200 text-slate-400 cursor-not-allowed' : 'bg-gold-500 hover:bg-gold-600 text-white'} rounded font-bold text-xs shadow-sm transition flex items-center justify-center`; addBtn.innerHTML = `<i class="fa-solid ${stock <= 0 ? 'fa-ban' : 'fa-plus'} mr-1"></i> ${stock <= 0 ? 'Stok Habis' : 'Tambah Ke Troli'}`; }
+        }
+
+        function syncInventoryToGoogleSheet() {
+            const cfg = getWooProxyConfig();
+            if (!cfg.url || !cfg.token || !Array.isArray(products)) return;
+            secureProxyRequest('syncInventory', { data: JSON.stringify(products) }, function(result) {
+                console.log('Rekod inventory Google Sheet dikemas kini:', result.count || 0);
+            }, function(err) {
+                console.warn('Gagal mengemas kini inventory Google Sheet:', err.message);
+            });
+        }
+
         function addToCart(productId) {
             const product = products.find(p => String(p.id) === String(productId));
             if (!product) return;
@@ -2533,9 +2731,10 @@
             const selectedColor = document.getElementById(`color_select_${productId}`)?.value || 'Piawai';
             const cartItemId = `${productId}-${selectedSize}-${selectedColor}`;
             const existing = cart.find(item => item.cartItemId === cartItemId);
-            const totalForProduct = cart.filter(x=>String(x.id)===String(product.id)).reduce((n,x)=>n+x.qty,0);
-            if(totalForProduct >= Number(product.stock||0)) {
-                alert(`Stok ${product.name} tidak mencukupi. Stok semasa: ${product.stock}.`);
+            const variantStock = getVariantStock(product, selectedSize, selectedColor);
+            const cartQtyForVariant = cart.filter(x=>String(x.id)===String(product.id) && x.size===selectedSize && x.color===selectedColor).reduce((n,x)=>n+x.qty,0);
+            if(cartQtyForVariant >= variantStock) {
+                alert(`Stok ${product.name} (${selectedSize}/${selectedColor}) tidak mencukupi. Stok semasa: ${variantStock}.`);
                 return;
             }
             if (existing) existing.qty += 1;
@@ -2548,8 +2747,9 @@
             if (!item) return;
             if(delta>0) {
                 const p=products.find(x=>String(x.id)===String(item.id));
-                const totalForProduct=cart.filter(x=>String(x.id)===String(item.id)).reduce((n,x)=>n+x.qty,0);
-                if(p && totalForProduct >= Number(p.stock||0)) { alert(`Stok ${p.name} tidak mencukupi. Stok semasa: ${p.stock}.`); return; }
+                const totalForVariant=cart.filter(x=>String(x.id)===String(item.id) && x.size===item.size && x.color===item.color).reduce((n,x)=>n+x.qty,0);
+                const available=p ? getVariantStock(p,item.size,item.color) : 0;
+                if(p && totalForVariant >= available) { alert(`Stok ${p.name} (${item.size}/${item.color}) tidak mencukupi. Stok semasa: ${available}.`); return; }
             }
             item.qty += delta;
             if (item.qty <= 0) cart = cart.filter(i => i.cartItemId !== cartItemId);
@@ -2644,7 +2844,26 @@
             }
         }
 
-        // PROSES BAYARAN (JANA RESIT RUNNING NUMBER EC-YYMMDD-001)
+        // PAPAR PILIHAN STATUS BAYARAN KHAS UNTUK INVOIS EJEN / STOKIS
+        function updateInvoicePaymentUI() {
+            const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
+            const orderType = orderTypeElem ? orderTypeElem.value : 'Walk-In';
+            const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(orderType));
+            const group = document.getElementById('invoicePaymentStatusGroup');
+            const statusElem = document.getElementById('invoicePaymentStatus');
+            const hint = document.getElementById('invoicePaymentHint');
+            const btn = document.getElementById('checkoutBtn');
+            if (group) group.classList.toggle('hidden', !isInvoice);
+            const isUnpaid = isInvoice && statusElem && statusElem.value === 'UNPAID';
+            if (hint) hint.textContent = isUnpaid
+                ? 'Invois akan direkod sebagai BELUM BAYAR. Baki penuh perlu dijelaskan kemudian.'
+                : 'Invois direkod sebagai telah dibayar.';
+            if (btn && !btn.disabled) btn.innerHTML = isInvoice
+                ? '<i class="fa-solid fa-file-invoice mr-2"></i> Jana Invois & Cetak'
+                : '<span>Bayar & Cetak Resit</span>' ;
+        }
+
+        // PROSES BAYARAN / JANA INVOIS EJEN DAN STOKIS
         function processCheckout() {
             if (cart.length === 0) {
                 alert('Troli anda masih kosong!');
@@ -2655,8 +2874,18 @@
             const discount = parseFloat(document.getElementById('discountInput').value) || 0;
             const grandTotal = Math.max(0, subtotal - discount);
             const cash = parseFloat(document.getElementById('cashTendered').value) || 0;
+            const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
+            const orderType = orderTypeElem ? orderTypeElem.value : 'Walk-In';
+            const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(orderType));
+            const invoiceStatus = isInvoice ? (document.getElementById('invoicePaymentStatus').value || 'PAID') : 'PAID';
+            const isUnpaidInvoice = isInvoice && invoiceStatus === 'UNPAID';
 
-            if (paymentMethod === 'Cash' && cash < grandTotal) {
+            if (isInvoice && (!document.getElementById('custName').value.trim())) {
+                alert('Sila masukkan nama ejen atau stokis untuk invois.');
+                return;
+            }
+
+            if (!isUnpaidInvoice && paymentMethod === 'Cash' && cash < grandTotal) {
                 alert('Jumlah tunai yang diterima tidak mencukupi!');
                 return;
             }
@@ -2671,14 +2900,12 @@
             const custPhone = document.getElementById('custPhone').value.trim() || '-';
             const staffName = currentUser ? currentUser.name : 'Staf';
 
-            const orderTypeElem = document.querySelector('input[name="orderType"]:checked');
-            const orderType = orderTypeElem ? orderTypeElem.value : 'Walk-In';
-
             const now = new Date();
             const receiptNo = generateDailyReceiptNumber(now);
 
             const transaction = {
                 orderNo: receiptNo,
+                invoiceNo: /ejen|agen|stokis|stockist|wholesale/i.test(String(orderType)) ? 'INV-' + receiptNo : '',
                 orderType: orderType,
                 channel: 'POS Butik',
                 staffName: staffName,
@@ -2690,34 +2917,44 @@
                 subtotal: subtotal,
                 discount: discount,
                 grandTotal: grandTotal,
-                paymentMethod: paymentMethod,
-                cashTendered: paymentMethod === 'Cash' ? cash : grandTotal,
-                change: paymentMethod === 'Cash' ? (cash - grandTotal) : 0
+                paymentMethod: isUnpaidInvoice ? 'Belum Bayar' : paymentMethod,
+                paymentStatus: isUnpaidInvoice ? 'UNPAID' : 'PAID',
+                paymentStatusLabel: isUnpaidInvoice ? 'BELUM BAYAR' : 'SUDAH BAYAR',
+                amountPaid: isUnpaidInvoice ? 0 : grandTotal,
+                outstandingAmount: isUnpaidInvoice ? grandTotal : 0,
+                cashTendered: isUnpaidInvoice ? 0 : (paymentMethod === 'Cash' ? cash : grandTotal),
+                change: isUnpaidInvoice ? grandTotal : (paymentMethod === 'Cash' ? (cash - grandTotal) : 0)
             };
 
             for (const item of cart) {
                 const p = products.find(x => String(x.id) === String(item.id));
-                if (!p || Number(p.stock) < Number(item.qty)) {
-                    alert(`Stok tidak mencukupi untuk ${item.name}. Stok semasa: ${p ? p.stock : 0}.`);
+                const variantAvailable = p ? getVariantStock(p, item.size, item.color) : 0;
+                if (!p || variantAvailable < Number(item.qty)) {
+                    alert(`Stok tidak mencukupi untuk ${item.name} (${item.size}/${item.color}). Stok semasa: ${p ? variantAvailable : 0}.`);
                     checkoutBtn.disabled = false;
-                    checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
+                    updateInvoicePaymentUI();
                     return;
                 }
             }
 
             for (const item of cart) {
                 const p = products.find(x => String(x.id) === String(item.id));
-                const before = p.stock;
-                p.stock -= item.qty;
-                recordStockMovement(p, 'OUT', item.qty, before, p.stock, `${transaction.orderNo} | POS (${item.size}/${item.color})`);
+                initializeVariantStocks(p, item.size, item.color);
+                const vKey = variantStockKey(item.size, item.color);
+                const before = Math.max(0, Number(p.variantStocks[vKey]) || 0);
+                p.variantStocks[vKey] = Math.max(0, before - Number(item.qty));
+                const after = p.variantStocks[vKey];
+                p.stock = getVariantStockTotal(p);
+                recordStockMovement(p, 'OUT', item.qty, before, after, `${transaction.orderNo} | POS (${item.size}/${item.color})`);
             }
             saveProducts();
+            syncInventoryToGoogleSheet();
 
             secureProxyRequest('saveSale', { data: JSON.stringify(transaction) }, function(res) {
                 salesHistory.unshift(transaction);
                 pushTransactionStocksToWooCommerce(transaction);
 
-                if (paymentMethod === 'Cash') {
+                if (paymentMethod === 'Cash' && !isUnpaidInvoice) {
                     triggerCashDrawer();
                 }
 
@@ -2726,26 +2963,29 @@
                 updateFinancialReports();
                 
                 checkoutBtn.disabled = false;
-                checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
-                alert(`Bayaran RM ${grandTotal.toFixed(2)} Berjaya!\nNo Resit: #${receiptNo}`);
+                if (isInvoice) document.getElementById('invoicePaymentStatus').value = 'PAID';
+                updateInvoicePaymentUI();
+                alert(isInvoice ? `Invois ${invoiceStatus === 'UNPAID' ? 'BELUM BAYAR' : 'TELAH DIBAYAR'} berjaya dijana!\nNo Invois: #INV-${receiptNo}\nJumlah: RM ${grandTotal.toFixed(2)}${isUnpaidInvoice ? `\nBaki perlu dibayar: RM ${grandTotal.toFixed(2)}` : ''}` : `Bayaran RM ${grandTotal.toFixed(2)} Berjaya!\nNo Resit: #${receiptNo}`);
             }, function(err) {
                 checkoutBtn.disabled = false;
-                checkoutBtn.innerHTML = 'Bayar & Cetak Resit';
+                updateInvoicePaymentUI();
                 alert('Ralat menyimpan ke Google Sheet: ' + err.message);
             });
         }
 
         /* PRINT RECEIPT */
         function printReceipt(transaction) {
-            document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col print-mode-receipt";
-
+            const isInvoice = /ejen|agen|stokis|stockist|wholesale/i.test(String(transaction.orderType || ''));
+            document.body.className = "bg-greycair-100 text-slate-800 min-h-screen flex flex-col " + (isInvoice ? "print-mode-invoice" : "print-mode-receipt");
             document.getElementById('rcpDate').innerText = `Tarikh: ${transaction.date}`;
-            document.getElementById('rcpOrderNo').innerText = `No Resit: #${transaction.orderNo}`;
-            document.getElementById('rcpOrderType').innerText = `Jenis: ${transaction.orderType || 'Walk-In'}`;
+            document.getElementById('rcpOrderNo').innerText = `${isInvoice ? 'No Invois' : 'No Resit'}: #${transaction.invoiceNo || transaction.orderNo}`;
+            document.getElementById('rcpOrderType').innerText = `${isInvoice ? 'INVOIS' : 'Jenis'}: ${transaction.orderType || 'Walk-In'}`;
             document.getElementById('rcpStaff').innerText = `Juruwang/Staf: ${transaction.staffName || 'Staf POS'}`;
             document.getElementById('rcpCustomer').innerText = `Pelanggan: ${transaction.custName || 'Walk-In'} (${transaction.custPhone || '-'})`;
             
-            document.getElementById('rcpPaymentMethod').innerText = `Kaedah Bayaran: ${transaction.paymentMethod || 'Tunai'}`;
+            document.getElementById('rcpPaymentMethod').innerText = isInvoice
+                ? `Status Bayaran: ${transaction.paymentStatusLabel || (transaction.paymentStatus === 'UNPAID' ? 'BELUM BAYAR' : 'SUDAH BAYAR')}${transaction.paymentStatus === 'UNPAID' ? ' (KREDIT)' : ' | ' + (transaction.paymentMethod || 'Tunai')}`
+                : `Kaedah Bayaran: ${transaction.paymentMethod || 'Tunai'}`;
             
             const rcpItems = document.getElementById('rcpItems');
             rcpItems.innerHTML = '';
@@ -2761,9 +3001,44 @@
 
             document.getElementById('rcpSubtotal').innerText = `Subtotal: RM ${Number(transaction.subtotal || 0).toFixed(2)}`;
             document.getElementById('rcpDiscount').innerText = `Diskaun: RM ${Number(transaction.discount || 0).toFixed(2)}`;
-            document.getElementById('rcpGrandTotal').innerText = `JUMLAH BERSIH: RM ${Number(transaction.grandTotal || 0).toFixed(2)}`;
-            document.getElementById('rcpTendered').innerText = `Jumlah Bayar: RM ${Number(transaction.cashTendered || 0).toFixed(2)}`;
-            document.getElementById('rcpChange').innerText = `Baki: RM ${Number(transaction.change || 0).toFixed(2)}`;
+            document.getElementById('rcpGrandTotal').innerText = `${isInvoice ? 'JUMLAH INVOIS' : 'JUMLAH BERSIH'}: RM ${Number(transaction.grandTotal || 0).toFixed(2)}`;
+            document.getElementById('rcpTendered').innerText = `${isInvoice ? 'Jumlah diterima' : 'Jumlah Bayar'}: RM ${Number(transaction.amountPaid !== undefined ? transaction.amountPaid : (transaction.cashTendered || 0)).toFixed(2)}`;
+            document.getElementById('rcpChange').innerText = isInvoice
+                ? `Baki perlu dibayar: RM ${Number(transaction.outstandingAmount !== undefined ? transaction.outstandingAmount : (transaction.paymentStatus === 'UNPAID' ? transaction.grandTotal : transaction.change || 0)).toFixed(2)}`
+                : `Baki: RM ${Number(transaction.change || 0).toFixed(2)}`;
+
+            if (isInvoice) {
+                const invText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value == null ? '-' : String(value); };
+                const money = value => 'RM ' + Number(value || 0).toFixed(2);
+                invText('invStoreName', document.getElementById('rcpStoreName').textContent || 'EJAY COLLECTION');
+                invText('invStoreWeb', document.getElementById('rcpStoreWeb').textContent || '');
+                invText('invStoreAddress', document.getElementById('rcpStoreAddress').textContent || '');
+                invText('invStorePhone', document.getElementById('rcpStorePhone').textContent || '');
+                invText('invNumber', transaction.invoiceNo || transaction.orderNo || '-');
+                invText('invDate', transaction.date || '-');
+                invText('invType', transaction.orderType || '-');
+                invText('invCustomer', transaction.custName || '-');
+                invText('invPhone', 'Telefon: ' + (transaction.custPhone || '-'));
+                const unpaid = transaction.paymentStatus === 'UNPAID' || Number(transaction.outstandingAmount || 0) > 0;
+                invText('invStatus', unpaid ? 'BELUM BAYAR (KREDIT)' : 'SUDAH BAYAR');
+                invText('invMethod', 'Kaedah: ' + (unpaid ? 'Kredit / Bayaran kemudian' : (transaction.paymentMethod || 'Tunai')));
+                invText('invPaymentNote', unpaid ? 'Sila jelaskan baki pembayaran seperti tertera.' : 'Bayaran telah diterima. Terima kasih.');
+                invText('invStaff', transaction.staffName || 'Staf POS');
+                const invoiceItems = document.getElementById('invItems');
+                invoiceItems.innerHTML = '';
+                (transaction.items || []).forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    const desc = [item.name, item.size && item.size !== '-' ? 'Saiz: ' + item.size : '', item.color && item.color !== '-' ? 'Warna: ' + item.color : ''].filter(Boolean).join(' | ');
+                    const values = [String(index + 1), desc, money(item.price), String(item.qty || 0), money(Number(item.price || 0) * Number(item.qty || 0))];
+                    values.forEach((value, col) => { const td = document.createElement('td'); td.textContent = value; if (col === 0 || col === 3) td.style.textAlign = 'center'; if (col === 2 || col === 4) td.style.textAlign = 'right'; tr.appendChild(td); });
+                    invoiceItems.appendChild(tr);
+                });
+                invText('invSubtotal', money(transaction.subtotal));
+                invText('invDiscount', money(transaction.discount));
+                invText('invGrandTotal', money(transaction.grandTotal));
+                invText('invPaid', money(transaction.amountPaid !== undefined ? transaction.amountPaid : (unpaid ? 0 : transaction.grandTotal)));
+                invText('invBalance', money(transaction.outstandingAmount !== undefined ? transaction.outstandingAmount : (unpaid ? transaction.grandTotal : 0)));
+            }
 
             window.print();
             
@@ -3257,8 +3532,28 @@
             document.getElementById('inventoryModal').classList.add('hidden');
             document.getElementById('inventoryModal').classList.remove('flex');
         }
+        function updateInventoryClearButton() {
+            const input = document.getElementById('invSearch');
+            const button = document.getElementById('clearInvSearchBtn');
+            if (!button) return;
+            const hasText = !!(input && input.value.length);
+            button.style.display = hasText ? 'flex' : 'none';
+            button.setAttribute('aria-hidden', hasText ? 'false' : 'true');
+        }
+
+        function clearInventorySearch() {
+            const input = document.getElementById('invSearch');
+            if (!input) return;
+            input.value = '';
+            updateInventoryClearButton();
+            renderInventoryTable();
+            input.focus();
+        }
+
         function renderInventoryTable() {
-            const q=(document.getElementById('invSearch')?.value||'').toLowerCase().trim();
+            const searchInput = document.getElementById('invSearch');
+            updateInventoryClearButton();
+            const q=(searchInput?.value||'').toLowerCase().trim();
             const filter=document.getElementById('invFilterStatus')?.value||'ALL';
             const body=document.getElementById('inventoryTableBody'); if(!body)return;
             let units=0, low=0, out=0, value=0;
@@ -3269,17 +3564,64 @@
             document.getElementById('invStatOut').innerText=out;
             document.getElementById('invStatValue').innerText='RM '+value.toFixed(2);
             const rows=products.filter(p=>{const st=getStockStatus(p); return (!q || `${p.name} ${p.sku} ${p.category}`.toLowerCase().includes(q)) && (filter==='ALL'||filter===st);});
-            body.innerHTML=rows.map(p=>`<tr class="border-t border-greycair-200 hover:bg-greycair-50"><td class="px-3 py-2 text-gold-700 font-semibold">${p.sku}</td><td class="px-3 py-2"><div class="font-semibold text-slate-800">${p.name}</div><div class="text-[10px] text-slate-500">ID: ${p.id}</div></td><td class="px-3 py-2 text-slate-600">${p.category||'-'}</td><td class="px-3 py-2 text-right">RM ${Number(p.price||0).toFixed(2)}</td><td class="px-3 py-2 text-right text-slate-500">RM ${Number(p.cost||0).toFixed(2)}</td><td class="px-3 py-2 text-right font-bold ${p.stock<=0?'text-red-600':p.stock<=p.minStock?'text-amber-600':'text-emerald-600'}">${p.stock}</td><td class="px-3 py-2 text-right text-slate-500">${p.minStock}</td><td class="px-3 py-2 text-center">${statusBadge(p)}</td><td class="px-3 py-2 text-right whitespace-nowrap"><button onclick="openStockActionModal(${p.id},'IN')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">+ Restok</button><button onclick="openStockActionModal(${p.id},'ADJUST')" class="px-2 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded text-[10px] font-semibold">Pelarasan</button></td></tr>`).join('') || '<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Tiada produk ditemui.</td></tr>';
+            body.innerHTML=rows.map(p=>`<tr class="border-t border-greycair-200 hover:bg-greycair-50"><td class="px-3 py-2 text-gold-700 font-semibold">${p.sku}</td><td class="px-3 py-2"><div class="font-semibold text-slate-800">${p.name}</div><div class="text-[10px] text-slate-500">ID: ${p.id}</div></td><td class="px-3 py-2 text-slate-600">${p.category||'-'}</td><td class="px-3 py-2 text-right">RM ${Number(p.price||0).toFixed(2)}</td><td class="px-3 py-2 text-right text-slate-500">RM ${Number(p.cost||0).toFixed(2)}</td><td class="px-3 py-2 text-right font-bold ${p.stock<=0?'text-red-600':p.stock<=p.minStock?'text-amber-600':'text-emerald-600'}">${p.stock}</td><td class="px-3 py-2 text-right text-slate-500">${p.minStock}</td><td class="px-3 py-2 text-center">${statusBadge(p)}</td><td class="px-3 py-2 text-right whitespace-nowrap"><button onclick="openStockActionModal(${p.id},'IN')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">+ Restok</button><button onclick="openStockActionModal(${p.id},'ADJUST')" class="px-2 py-1 bg-greycair-200 hover:bg-greycair-300 text-slate-700 rounded text-[10px] font-semibold mr-1">Pelarasan</button><button onclick="deleteInventoryProduct(this.dataset.productId)" data-product-id="${String(p.id).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}" style="display:inline-flex;align-items:center;visibility:visible;opacity:1" class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-[10px] font-bold" title="Padam produk daripada inventori"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button></td></tr>`).join('') || '<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Tiada produk ditemui.</td></tr>';
         }
         
+        // PADAM PRODUK DARIPADA INVENTORI (ADMIN SAHAJA)
+        // Rekod jualan lama tidak dipadam; pergerakan stok direkodkan untuk audit.
+        function deleteInventoryProduct(productId) {
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('Akses dihadkan: hanya Admin dibenarkan memadam produk daripada inventori.');
+                return;
+            }
+
+            const index = products.findIndex(p => String(p.id) === String(productId));
+            if (index < 0) {
+                alert('Produk tidak ditemui dalam inventori.');
+                return;
+            }
+
+            const product = products[index];
+            const stockNow = Math.max(0, Number(product.stock) || 0);
+            const confirmText =
+                `Anda pasti mahu memadam produk ini daripada inventori?\n\n` +
+                `Produk: ${product.name}\nSKU: ${product.sku}\nStok semasa: ${stockNow} unit\n\n` +
+                `Tindakan ini tidak boleh dibuat asal. Rekod jualan lama akan dikekalkan.`;
+
+            if (!confirm(confirmText)) return;
+
+            recordStockMovement(
+                product,
+                'DELETE',
+                stockNow,
+                stockNow,
+                0,
+                'Produk dipadam daripada inventori oleh Admin'
+            );
+
+            products.splice(index, 1);
+            saveProducts();
+            syncInventoryToGoogleSheet();
+
+            // Buang produk daripada troli semasa jika masih ada.
+            if (Array.isArray(cart)) {
+                cart = cart.filter(item => String(item.id) !== String(productId));
+                if (typeof renderCart === 'function') renderCart();
+            }
+
+            renderCategoryFilterButtons();
+            renderProducts();
+            renderInventoryTable();
+            alert(`Produk "${product.name}" telah dipadam daripada inventori. Rekod jualan terdahulu dikekalkan.`);
+        }
+
         // MODAL RESTOK DENGAN VARIASI SAIZ / PERFUME ML & WARNA
         function openStockActionModal(productId, type='IN') {
             const p = products.find(x => String(x.id) === String(productId)); if(!p) return;
             document.getElementById('stockActionProductId').value = p.id;
-            document.getElementById('stockActionProduct').innerText = `${p.name} | ${p.sku} | Stok semasa: ${p.stock}`;
+            document.getElementById('stockActionProduct').innerText = `${p.name} | ${p.sku} | Jumlah stok: ${p.stock}`;
             document.getElementById('stockActionType').value = type;
             document.getElementById('stockActionQty').value = 1;
-            document.getElementById('stockActionNewQty').value = p.stock;
             document.getElementById('stockActionRef').value = '';
 
             // Populasikan Dropdown Saiz / Volume Perfume ml
@@ -3289,9 +3631,12 @@
             // Populasikan Dropdown Warna / Bau
             const colorSelect = document.getElementById('stockActionColor');
             colorSelect.innerHTML = (p.colors && p.colors.length ? p.colors : ['Piawai']).map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('stockActionNewQty').value = getVariantStock(p, sizeSelect.value, colorSelect.value);
 
             toggleStockActionFields();
-            document.getElementById('stockActionModal').classList.remove('hidden'); 
+            sizeSelect.onchange = () => { document.getElementById('stockActionNewQty').value = getVariantStock(p, sizeSelect.value, colorSelect.value); };
+            colorSelect.onchange = () => { document.getElementById('stockActionNewQty').value = getVariantStock(p, sizeSelect.value, colorSelect.value); };
+            document.getElementById('stockActionModal').classList.remove('hidden');
             document.getElementById('stockActionModal').classList.add('flex');
         }
 
@@ -3315,24 +3660,25 @@
             const sizeVal = document.getElementById('stockActionSize').value;
             const colorVal = document.getElementById('stockActionColor').value;
             const userRef = document.getElementById('stockActionRef').value.trim();
-            const before = Number(p.stock) || 0;
-
+            initializeVariantStocks(p, sizeVal, colorVal);
+            const vKey = variantStockKey(sizeVal, colorVal);
+            const before = Math.max(0, Number(p.variantStocks[vKey]) || 0);
             const fullRef = `${userRef ? userRef + ' ' : ''}(Variasi: ${sizeVal}/${colorVal})`;
-
             let after = before, qty = 0;
             if(type === 'ADJUST') {
                 after = Math.max(0, parseInt(document.getElementById('stockActionNewQty').value) || 0);
                 qty = Math.abs(after - before);
             } else {
-                qty = Math.max(0, parseInt(document.getElementById('stockActionQty').value) || 0); 
-                after = type === 'IN' ? before + qty : before - qty; 
-                if(after < 0){ alert(`Stok tidak mencukupi. Stok semasa: ${before}.`); return; }
+                qty = Math.max(0, parseInt(document.getElementById('stockActionQty').value) || 0);
+                after = type === 'IN' ? before + qty : before - qty;
+                if(after < 0){ alert(`Stok tidak mencukupi untuk ${sizeVal}/${colorVal}. Stok semasa: ${before}.`); return; }
             }
-
-            p.stock = after; 
-            recordStockMovement(p, type, qty, before, after, fullRef); 
+            p.variantStocks[vKey] = after;
+            p.stock = getVariantStockTotal(p);
+            recordStockMovement(p, type, qty, before, after, fullRef);
             saveProducts();
-            closeStockActionModal(); 
+            syncInventoryToGoogleSheet();
+            closeStockActionModal();
             renderInventoryTable(); 
             renderProducts(); 
             alert(`Restok ${p.name} [${sizeVal}/${colorVal}] berjaya: Stok ${before} → ${after}.`);
@@ -3355,12 +3701,57 @@
             if(products.some(p=>String(p.sku).toLowerCase()===sku.toLowerCase())){alert('SKU tersebut sudah digunakan.');return;}
             const stock=Math.max(0,parseInt(document.getElementById('newProdStock').value)||0),id=Date.now();
             const p={id,name,sku,category:document.getElementById('newProdCategory').value.trim()||'Aksesori',price:parseFloat(document.getElementById('newProdPrice').value)||0,cost:parseFloat(document.getElementById('newProdCost').value)||0,stock,minStock:Math.max(0,parseInt(document.getElementById('newProdMinStock').value)||0),image:document.getElementById('newProdImage').value.trim(),sizes:document.getElementById('newProdSizes').value.split(',').map(x=>x.trim()).filter(Boolean),colors:document.getElementById('newProdColors').value.split(',').map(x=>x.trim()).filter(Boolean), isManual: true};
-            products.push(p); saveProducts(); if(stock>0)recordStockMovement(p,'IN',stock,0,stock,'Stok awal / produk baharu'); closeAddProductModal();renderCategoryFilterButtons();renderProducts();renderInventoryTable();alert(`Produk ${name} berjaya ditambah.`);
+            products.push(p); saveProducts(); if(stock>0)recordStockMovement(p,'IN',stock,0,stock,'Stok awal / produk baharu'); syncInventoryToGoogleSheet(); closeAddProductModal();renderCategoryFilterButtons();renderProducts();renderInventoryTable();alert(`Produk ${name} berjaya ditambah.`);
+        }
+
+        // INVENTORI: EKSPORT / IMPORT CSV (format eksport boleh diimport semula)
+        function csvEscapeInventory(value) {
+            const v = value === null || value === undefined ? '' : (typeof value === 'object' ? JSON.stringify(value) : String(value));
+            return '"' + v.replace(/"/g, '""') + '"';
+        }
+        function exportInventoryCSV() {
+            if (!products.length) { alert('Tiada produk untuk dieksport.'); return; }
+            const headers = ['id','name','sku','category','price','cost','stock','minStock','image','sizes','colors','variantStocks','isManual'];
+            const rows = [headers.join(',')];
+            products.forEach(p => rows.push(headers.map(k => csvEscapeInventory(p[k])).join(',')));
+            downloadCSV('\uFEFF' + rows.join('\r\n'), 'Inventori_Ejay_Collection.csv');
+        }
+        function parseInventoryCSVLine(line) {
+            const out=[]; let cur=''; let quoted=false;
+            for(let i=0;i<line.length;i++) { const c=line[i]; if(c==='"' && quoted && line[i+1]==='"'){cur+='"';i++;} else if(c==='"'){quoted=!quoted;} else if(c===',' && !quoted){out.push(cur);cur='';} else cur+=c; }
+            out.push(cur); return out;
+        }
+        function importInventoryCSV(event) {
+            const file = event.target.files && event.target.files[0]; if(!file) return;
+            if(!currentUser || currentUser.role !== 'admin') { alert('Import inventori hanya dibenarkan untuk Admin.'); event.target.value=''; return; }
+            const reader = new FileReader();
+            reader.onload = function() {
+                try {
+                    const lines = String(reader.result || '').replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());
+                    if(lines.length < 2) throw new Error('Fail CSV tiada rekod produk.');
+                    const headers = parseInventoryCSVLine(lines[0]).map(x=>x.trim());
+                    const index = Object.fromEntries(headers.map((h,i)=>[h,i]));
+                    if(index.name === undefined || index.sku === undefined) throw new Error('CSV mesti mempunyai lajur name dan sku. Gunakan Eksport CSV sebagai templat.');
+                    let added=0, updated=0;
+                    for(let i=1;i<lines.length;i++) {
+                        const cols=parseInventoryCSVLine(lines[i]); const get=k=>index[k]===undefined?'':cols[index[k]]||'';
+                        const name=get('name').trim(), sku=get('sku').trim(); if(!name || !sku) continue;
+                        let p=products.find(x=>String(x.sku).toLowerCase()===sku.toLowerCase());
+                        const parseJSON=(v,fallback)=>{try{return v?JSON.parse(v):fallback;}catch(_){return fallback;}};
+                        const data={id:get('id')||Date.now()+i,name,sku,category:get('category')||'Aksesori',price:Number(get('price'))||0,cost:Number(get('cost'))||0,stock:Math.max(0,Number(get('stock'))||0),minStock:Math.max(0,Number(get('minStock'))||0),image:get('image'),sizes:parseJSON(get('sizes'),String(get('sizes')||'Free Size').split(';').map(x=>x.trim()).filter(Boolean)),colors:parseJSON(get('colors'),String(get('colors')||'Piawai').split(';').map(x=>x.trim()).filter(Boolean)),variantStocks:parseJSON(get('variantStocks'),{}),isManual:true};
+                        if(p) { Object.assign(p,data,{id:p.id}); updated++; } else { products.push(data); added++; }
+                    }
+                    normalizeProducts(); syncInventoryToGoogleSheet(); renderCategoryFilterButtons(); renderProducts(); renderInventoryTable();
+                    alert(`Import selesai. Produk baharu: ${added}; produk dikemas kini: ${updated}.`);
+                } catch(err) { alert('Import gagal: '+err.message); }
+                finally { event.target.value=''; }
+            };
+            reader.onerror=()=>{alert('Fail CSV tidak dapat dibaca.');event.target.value='';}; reader.readAsText(file,'UTF-8');
         }
 
         function openStockMovementModal(){
             const body=document.getElementById('stockMovementBody');
-            body.innerHTML=stockMovements.slice(0,300).map(m=>`<tr class="border-t border-greycair-200"><td class="px-3 py-2 text-slate-500">${new Date(m.date).toLocaleString('ms-MY')}</td><td class="px-3 py-2 text-gold-700 font-semibold">${m.sku}</td><td class="px-3 py-2 font-semibold text-slate-800">${m.productName}</td><td class="px-3 py-2 text-center"><span class="px-2 py-0.5 rounded font-bold ${m.type==='IN'?'bg-emerald-100 text-emerald-700':m.type==='OUT'?'bg-red-100 text-red-700':'bg-amber-100 text-amber-700'}">${m.type}</span></td><td class="px-3 py-2 text-right font-bold text-slate-800">${m.qty}</td><td class="px-3 py-2 text-right text-slate-500">${m.before}</td><td class="px-3 py-2 text-right text-slate-800 font-semibold">${m.after}</td><td class="px-3 py-2 text-slate-600">${m.reference||'-'}</td><td class="px-3 py-2 text-slate-600">${m.staff||'-'}</td></tr>`).join('')||'<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Belum ada pergerakan stok.</td></tr>';
+            body.innerHTML=stockMovements.slice(0,300).map(m=>`<tr class="border-t border-greycair-200"><td class="px-3 py-2 text-slate-500">${new Date(m.date).toLocaleString('ms-MY')}</td><td class="px-3 py-2 text-gold-700 font-semibold">${m.sku}</td><td class="px-3 py-2 font-semibold text-slate-800">${m.productName}</td><td class="px-3 py-2 text-center"><span class="px-2 py-0.5 rounded font-bold ${m.type==='IN'?'bg-emerald-100 text-emerald-700':m.type==='OUT'||m.type==='DELETE'?'bg-red-100 text-red-700':'bg-amber-100 text-amber-700'}">${m.type}</span></td><td class="px-3 py-2 text-right font-bold text-slate-800">${m.qty}</td><td class="px-3 py-2 text-right text-slate-500">${m.before}</td><td class="px-3 py-2 text-right text-slate-800 font-semibold">${m.after}</td><td class="px-3 py-2 text-slate-600">${m.reference||'-'}</td><td class="px-3 py-2 text-slate-600">${m.staff||'-'}</td></tr>`).join('')||'<tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Belum ada pergerakan stok.</td></tr>';
             document.getElementById('stockMovementModal').classList.remove('hidden');document.getElementById('stockMovementModal').classList.add('flex');
         }
         function closeStockMovementModal(){document.getElementById('stockMovementModal').classList.add('hidden');document.getElementById('stockMovementModal').classList.remove('flex');}
@@ -3560,6 +3951,7 @@
                     populateProductFilterDropdown();
                     populateExternalSaleModalDropdowns();
                     saveProducts();
+                    syncInventoryToGoogleSheet();
                     alert(`Berjaya menyegerakkan ${data.length} produk dari WooCommerce dan mengekalkan item inventori tempatan!`);
                 } else {
                     alert('Sambungan berjaya tetapi tiada produk diterima daripada WooCommerce.');
@@ -3950,7 +4342,13 @@
                 else posSales += amt;
             });
 
-            let cfTotalOutflow = cfExpensesList.reduce((sum, exp) => sum + Number(exp.amount || 0), 0);
+            let cfTotalOutflow = cfExpensesList.reduce((sum, exp) => {
+                const flowType = exp.flowType || (
+                    exp.category === 'Modal Pemilik' ? 'CAPITAL_IN' :
+                    exp.category === 'Ambilan Pemilik' ? 'OWNER_DRAW' : 'EXPENSE'
+                );
+                return flowType === 'CAPITAL_IN' ? sum : sum + Number(exp.amount || exp.amountRM || 0);
+            }, 0);
             let cfNetCashflow = cfTotalInflow - cfTotalOutflow;
 
             // Render ke UI Cashflow
@@ -3969,16 +4367,44 @@
                 if (cfExpensesList.length === 0) {
                     cfExpenseBreakdown.innerHTML = '<div class="text-slate-400 text-[11px]">- Tiada rekod perbelanjaan bagi tempoh ini.</div>';
                 } else {
-                    const expenseCatMap = {};
+                    // Paparkan setiap aliran keluar satu per satu; jangan gabungkan ikut kategori.
                     cfExpensesList.forEach(exp => {
-                        expenseCatMap[exp.category] = (expenseCatMap[exp.category] || 0) + Number(exp.amount || 0);
-                    });
+                        const flowType = exp.flowType || (
+                            exp.category === 'Modal Pemilik' ? 'CAPITAL_IN' :
+                            exp.category === 'Ambilan Pemilik' ? 'OWNER_DRAW' : 'EXPENSE'
+                        );
+                        // Modal masuk bukan aliran tunai keluar.
+                        if (flowType === 'CAPITAL_IN') return;
 
-                    Object.entries(expenseCatMap).forEach(([cat, val]) => {
+                        const category = String(exp.category || 'Belanja').trim();
+                        // Keterangan boleh datang daripada medan berlainan mengikut versi rekod.
+                        // Abaikan nilai generik supaya keterangan sebenar tidak terlindung.
+                        const detailCandidates = [
+                            exp.recipientNote, exp.description, exp.keterangan, exp.penerangan,
+                            exp.notes, exp.note, exp.memo, exp.recipient, exp.PenerimaCatatan,
+                            exp.title, exp.descriptionText
+                        ];
+                        const genericDetails = new Set([
+                            '', 'belanja', 'perbelanjaan am', 'expense', 'tunai keluar',
+                            'modal pemilik', 'ambilan pemilik', category.toLowerCase()
+                        ]);
+                        let detail = '';
+                        for (const candidate of detailCandidates) {
+                            const candidateText = String(candidate == null ? '' : candidate).trim();
+                            if (candidateText && !genericDetails.has(candidateText.toLowerCase())) {
+                                detail = candidateText;
+                                break;
+                            }
+                        }
+                        const description = detail && detail.toLowerCase() !== category.toLowerCase()
+                            ? `${category} (${detail})` : category;
+                        const safe = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
                         cfExpenseBreakdown.innerHTML += `
-                            <div class="flex justify-between">
-                                <span>- ${cat}</span>
-                                <span class="font-bold text-rose-600">(RM ${val.toFixed(2)})</span>
+                            <div class="flex justify-between items-start gap-3 border-b border-slate-100 py-1">
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-slate-700 break-words">- ${safe(description)}</div>
+                                </div>
+                                <span class="font-bold text-rose-600 whitespace-nowrap">(RM ${Number(exp.amount || exp.amountRM || 0).toFixed(2)})</span>
                             </div>
                         `;
                     });
